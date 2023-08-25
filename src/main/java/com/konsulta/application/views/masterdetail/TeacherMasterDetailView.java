@@ -36,7 +36,7 @@ import java.util.Optional;
 
 @PageTitle("Teacher Master-Detail")
 @Route(value = "teacher-master-detail/:teacherID?/:action?(edit)", layout = MainLayout.class)
-@RouteAlias(value = "", layout = MainLayout.class)
+@RouteAlias(value = "hahaa", layout = MainLayout.class)
 @Uses(Icon.class)
 public class TeacherMasterDetailView extends Div implements BeforeEnterObserver {
 

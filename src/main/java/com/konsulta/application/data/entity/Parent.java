@@ -13,4 +13,10 @@ public class Parent extends Account {
 
     @ManyToMany
     private Set<Student> children; //parents can have multiple children
+
+    public String getPhoneNumber() {return phoneNumber;}
+    public void setPhoneNumber(String phoneNumber) {this.phoneNumber = phoneNumber;}
+    public Set<Student> getChildren() {return children;}
+    public void setChildren(Set<Student> children) {this.children = children;}
 }
+
