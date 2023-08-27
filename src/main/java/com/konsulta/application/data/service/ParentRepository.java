@@ -7,5 +7,5 @@ public interface ParentRepository
         extends
         JpaRepository<Parent, Long>,
         JpaSpecificationExecutor<Parent> {
-
+    Parent findByEmail(String email);
 }

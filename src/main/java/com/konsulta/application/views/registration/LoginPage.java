@@ -1,5 +1,8 @@
 package com.konsulta.application.views.registration;
 
+import com.konsulta.application.data.service.AdminService;
+import com.konsulta.application.data.service.ParentService;
+import com.konsulta.application.data.service.TeacherService;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.H1;
@@ -14,8 +17,15 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 @PageTitle("Login page")
 public class LoginPage extends VerticalLayout {
     private Button loginButton;
+    private final AdminService adminService;
+    private final TeacherService teacherService;
+    private final ParentService parentService;
 
-    public LoginPage() {
+    public LoginPage(AdminService adminService, TeacherService teacherService, ParentService parentService) {
+        this.adminService = adminService;
+        this.teacherService = teacherService;
+        this.parentService = parentService;
+
         setAlignItems(Alignment.CENTER);
         setJustifyContentMode(JustifyContentMode.CENTER);
         setHeightFull();
@@ -31,46 +41,31 @@ public class LoginPage extends VerticalLayout {
         loginButton.addClickListener(event -> {
             String email = emailField.getValue();
             String password = passwordField.getValue();
+            String userType = null; //is used to create different mainlayouts to show different navigation bars based on the role (RBAC)
 
-            //checks what type of acc is logging in
-            if (isAdmin(email, password)) {
-           //     UI.getCurrent().navigate(AdminDashboardPage.class);
+            //check what type of acc it is (admin, teacher or parent)
+            if (adminService.isValidAdminLogin(email, password)) {
+                //UI.getCurrent().navigate(AdminDashboardPage.class);
+                userType = "admin";
+                Notification.show("You are an admin!", 3000, Notification.Position.TOP_CENTER);
             }
 
-            else if (isTeacher(email, password)) {
-               // UI.getCurrent().navigate(TeacherDashboardPage.class);
+            else if (teacherService.isValidTeacherLogin(email, password)) {
+                //UI.getCurrent().navigate(TeacherDashboardPage.class);
+                userType = "teacher";
+                Notification.show("You are a teacher!", 3000, Notification.Position.TOP_CENTER);
             }
 
-           // else if (isParent(email, password)) {
+            else if (parentService.isValidParentLogin(email, password)) {
                // UI.getCurrent().navigate(ParentDashboardPage.class);
-          //  }
-
+                userType = "parent";
+                Notification.show("You are a parent!", 3000, Notification.Position.TOP_CENTER);
+            }
             else {
-                //displays an error message for invalid credentials
+                //in case the credentials are invalid
                 Notification.show("Invalid email or password", 3000, Notification.Position.TOP_CENTER);
             }
         });
-
         add(title, emailField, passwordField, loginButton);
     }
-
-    private boolean isAdmin(String email, String password) {
-        // Check admin credentials
-        // Return true if the admin account exists and the password matches
-        // Replace this with your actual admin authentication logic
-        return false;
-    }
-
-    private boolean isTeacher(String email, String password) {
-        // Check teacher credentials
-        // Return true if a teacher account exists and the password matches
-        // Replace this with your actual teacher authentication logic
-        return false;
-    }
-
-    //private boolean isParent(String email, String password) {
-        // Check parent credentials
-        // Return true if a parent account exists and the password matches
-        // Replace this with your actual parent authentication logicreturn Parent.getParents().stream()
-   // }
 }

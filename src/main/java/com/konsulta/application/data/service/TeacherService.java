@@ -40,6 +40,12 @@ public class TeacherService {
     public int count() {
         return (int) repository.count();
     }
+
+    public boolean isValidTeacherLogin(String email, String password) {
+        Teacher teacher = repository.findByEmail(email);
+        return teacher != null && teacher.getPassword().equals(password);
+    }
+
 }
 
 

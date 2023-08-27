@@ -18,5 +18,14 @@ public class ParentService {
         return parentRepository.save(parent);
     }
 
+    public Parent findByEmail(String email) {
+        return parentRepository.findByEmail(email);
+    }
+
+    public boolean isValidParentLogin(String email, String password) {
+        Parent parent = parentRepository.findByEmail(email);
+        return parent != null && parent.getPassword().equals(password);
+    }
+
 }
 
