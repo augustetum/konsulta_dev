@@ -1,7 +1,7 @@
 package com.konsulta.application.data.service;
 
 import com.konsulta.application.data.entity.Admin;
-import com.konsulta.application.data.service.AdminRepository;
+import com.konsulta.application.data.repository.AdminRepository;
 import org.springframework.stereotype.Service;
 
 @Service

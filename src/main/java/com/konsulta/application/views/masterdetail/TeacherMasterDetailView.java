@@ -2,12 +2,9 @@ package com.konsulta.application.views.masterdetail;
 
 import com.konsulta.application.data.entity.Teacher;
 import com.konsulta.application.data.service.TeacherService;
-import com.konsulta.application.views.MainLayout;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.checkbox.Checkbox;
-import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dependency.Uses;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
@@ -22,7 +19,6 @@ import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.ValidationException;
-import com.vaadin.flow.data.renderer.LitRenderer;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
@@ -35,8 +31,8 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import java.util.Optional;
 
 @PageTitle("Teacher Master-Detail")
-@Route(value = "teacher-master-detail/:teacherID?/:action?(edit)", layout = MainLayout.class)
-@RouteAlias(value = "hahaa", layout = MainLayout.class)
+@Route(value = "teacher-master-detail/:teacherID?/:action?(edit)")
+@RouteAlias(value = "teacher-crud")
 @Uses(Icon.class)
 public class TeacherMasterDetailView extends Div implements BeforeEnterObserver {
 

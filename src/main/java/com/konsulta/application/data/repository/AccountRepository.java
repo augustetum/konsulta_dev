@@ -1,4 +1,4 @@
-package com.konsulta.application.data.service;
+package com.konsulta.application.data.repository;
 import com.konsulta.application.data.entity.Account;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
