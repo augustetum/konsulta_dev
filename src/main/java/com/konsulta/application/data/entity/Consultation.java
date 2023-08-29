@@ -17,8 +17,17 @@ public class Consultation extends AbstractEntity {
     @Enumerated(EnumType.STRING) // Enum should be persisted as a string
     private ConsultationStatus status;
 
-    @Embedded // Embed the Timeslot class
+    @OneToOne
     private Timeslot timeslot;
+
+    public Teacher getTeacher() {return teacher;}
+    public void setTeacher(Teacher teacher) {this.teacher = teacher;}
+    public ConsultationStatus getStatus() {return status;}
+    public void setStatus(ConsultationStatus status) {this.status = status;}
+    public Timeslot getTimeslot() {return timeslot;}
+    public void setTimeslot(Timeslot timeslot) {this.timeslot = timeslot;}
+    public Parent getParent() {return parent;}
+    public void setParent(Parent parent) {this.parent = parent;}
 
 }
 

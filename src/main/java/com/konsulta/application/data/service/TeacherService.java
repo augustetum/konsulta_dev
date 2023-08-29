@@ -1,6 +1,7 @@
 package com.konsulta.application.data.service;
 
 import com.konsulta.application.data.entity.Teacher;
+import com.konsulta.application.data.repository.TeacherRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;

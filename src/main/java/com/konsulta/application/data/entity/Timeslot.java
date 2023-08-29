@@ -1,20 +1,23 @@
 package com.konsulta.application.data.entity;
 
-import jakarta.persistence.Embeddable;
-import jakarta.persistence.Entity;
-
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
-@Embeddable
-public enum Timeslot {
-    ;
+@Entity
+@Table(name = "kon_timeslots")
+public class Timeslot extends AbstractEntity {
+
     private LocalDateTime start;
     private LocalDateTime end;
 
-    Timeslot() {
+    @ManyToOne
+    private Teacher teacher;
+
+
+    public Timeslot() {
     }
 
-    Timeslot(LocalDateTime start, LocalDateTime end) {
+    public Timeslot(LocalDateTime start, LocalDateTime end) {
         this.start = start;
         this.end = end;
     }
@@ -34,9 +37,7 @@ public enum Timeslot {
     public void setEnd(LocalDateTime end) {
         this.end = end;
     }
-
-    @Override
-    public String toString() {
-        return start.toString() + " - " + end.toString();
-    }
 }
+
+
+

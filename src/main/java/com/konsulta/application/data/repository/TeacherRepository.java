@@ -1,4 +1,4 @@
-package com.konsulta.application.data.service;
+package com.konsulta.application.data.repository;
 import com.konsulta.application.data.entity.Admin;
 import com.konsulta.application.data.entity.Teacher;
 import org.springframework.data.jpa.repository.JpaRepository;

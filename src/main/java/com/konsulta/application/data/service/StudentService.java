@@ -1,6 +1,7 @@
 package com.konsulta.application.data.service;
 
 import com.konsulta.application.data.entity.Student;
+import com.konsulta.application.data.repository.StudentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
