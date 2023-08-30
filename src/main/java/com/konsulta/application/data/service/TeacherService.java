@@ -1,12 +1,17 @@
 package com.konsulta.application.data.service;
 
+import com.konsulta.application.data.entity.Parent;
 import com.konsulta.application.data.entity.Teacher;
+import com.konsulta.application.data.entity.Timeslot;
 import com.konsulta.application.data.repository.TeacherRepository;
+import org.hibernate.Hibernate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -38,6 +43,10 @@ public class TeacherService {
         return repository.findAll(filter, pageable);
     }
 
+    public Teacher findByEmail(String email) {
+        return repository.findByEmail(email);
+    }
+
     public int count() {
         return (int) repository.count();
     }
@@ -45,6 +54,16 @@ public class TeacherService {
     public boolean isValidTeacherLogin(String email, String password) {
         Teacher teacher = repository.findByEmail(email);
         return teacher != null && teacher.getPassword().equals(password);
+    }
+
+    public void addTimeslotsToTeacher(Long teacherId, List<Timeslot> timeslots) {
+        Optional<Teacher> teacherOptional = repository.findById(teacherId);
+        if (teacherOptional.isPresent()) {
+            Teacher teacher = teacherOptional.get();
+            // Add the new timeslots to the existing list
+            teacher.getTimeslots().addAll(timeslots);
+            repository.save(teacher);
+        }
     }
 
 }

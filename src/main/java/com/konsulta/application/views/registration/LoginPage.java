@@ -1,5 +1,6 @@
 package com.konsulta.application.views.registration;
 
+import com.konsulta.application.data.entity.Teacher;
 import com.konsulta.application.data.service.AdminService;
 import com.konsulta.application.data.service.ParentService;
 import com.konsulta.application.data.service.TeacherService;
@@ -53,6 +54,8 @@ public class LoginPage extends VerticalLayout {
             }
 
             else if (teacherService.isValidTeacherLogin(email, password)) {
+                Teacher teacher = teacherService.findByEmail(email); // Fetch the Teacher entity
+                UI.getCurrent().getSession().setAttribute("teacher", teacher);
                 UI.getCurrent().navigate(TeacherDashboardPage.class);
                 userType = "teacher";
                 Notification.show("You are a teacher!", 3000, Notification.Position.TOP_CENTER);
