@@ -2,82 +2,82 @@ package com.konsulta.application.data.service;
 
 import com.konsulta.application.data.entity.Teacher;
 import com.konsulta.application.data.entity.Timeslot;
-import com.konsulta.application.data.repository.TeacherRepository;
 import com.konsulta.application.data.repository.TimeslotRepository;
-import com.konsulta.application.data.service.TeacherService;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.DayOfWeek;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.*;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class TimeslotGenerator {
 
-    private final TeacherService teacherService;
-    private final TimeslotRepository timeslotRepository; // Autowire the TimeslotRepository
-    private final TeacherRepository teacherRepository;
+    @Autowired
+    private TimeslotRepository timeslotRepository;
 
     @Autowired
-    public TimeslotGenerator(TeacherService teacherService, TimeslotRepository timeslotRepository, TeacherRepository teacherRepository) {
-        this.teacherService = teacherService;
-        this.timeslotRepository = timeslotRepository;
-        this.teacherRepository = teacherRepository;
-    }
+    private TeacherService teacherService;
 
     @Transactional
-    public void generateTimeslots(Long teacherId, DayOfWeek dayOfWeek, LocalTime startTime, LocalTime endTime) {
-        LocalDateTime currentDate = LocalDateTime.now();
-        LocalDateTime endDate = currentDate.plusDays(14).withHour(endTime.getHour()).withMinute(endTime.getMinute());
+    public void generateTimeslots(Long teacherId, DayOfWeek selectedDay, LocalTime startTime, LocalTime endTime) {
+        // Find the next occurrence of the selected day of the week
+        LocalDate currentDate = LocalDate.now();
+        LocalDate nextSelectedDay = currentDate.with(TemporalAdjusters.nextOrSame(selectedDay));
 
-        List<Timeslot> generatedTimeslots = new ArrayList<>();
+        // Calculate the duration of each consultation
+        Duration consultationDuration = Duration.ofMinutes(15);
 
-        int slotDuration = 15; // minutes
-        int breakDuration = 5; // minutes
+        // Calculate the duration of each break
+        Duration breakDuration = Duration.ofMinutes(5);
 
-        // Calculate the start and end times for slots within the specified range
-        LocalTime slotStartTime = startTime;
-        LocalTime slotEndTime = startTime.plusMinutes(slotDuration);
+        // Create a list to store the generated timeslots
+        List<Timeslot> timeslots = new ArrayList<>();
 
-        while (slotEndTime.isBefore(endTime) || (slotEndTime.equals(endTime))) {
-            LocalDateTime slotStart = LocalDateTime.of(currentDate.getYear(), currentDate.getMonthValue(), currentDate.getDayOfMonth(), slotStartTime.getHour(), slotStartTime.getMinute());
-            LocalDateTime slotEnd = LocalDateTime.of(currentDate.getYear(), currentDate.getMonthValue(), currentDate.getDayOfMonth(), slotEndTime.getHour(), slotEndTime.getMinute());
+        // Fetch the teacher from the database using the teacherId
+        Optional<Teacher> teacherOptional = teacherService.get(teacherId);
 
-            // Create timeslots on the specified day of the week
-            if (slotStart.getDayOfWeek() == dayOfWeek) {
-                Timeslot timeslot = new Timeslot(slotStart, slotEnd);
+        if (teacherOptional.isPresent()) {
+            Teacher teacher = teacherOptional.get();
 
-                // Check if the timeslot overlaps with existing ones
-               // if (!overlapsExistingTimeslots(teacherId, timeslot)) {
-                    // Save the Timeslot entity to the database
-                  //  timeslotRepository.save(timeslot);
-                   // generatedTimeslots.add(timeslot);
-              //  }
+            // Generate 3 timeslots for the upcoming month
+            for (int i = 0; i < 3; i++) {
+                LocalDateTime slotStart = nextSelectedDay.atTime(startTime);
+
+                for (int j = 0; j < 3; j++) {
+                    // Calculate the end time of the consultation
+                    LocalDateTime slotEnd = slotStart.plus(consultationDuration);
+
+                    // Create a new Timeslot object
+                    Timeslot timeslot = new Timeslot(slotStart, slotEnd);
+
+                    // Associate the timeslot with the teacher
+                    timeslot.setTeacher(teacher);
+
+                    // Save the timeslot to the database
+                    timeslotRepository.save(timeslot);
+
+                    // Add the timeslot to the list
+                    timeslots.add(timeslot);
+
+                    // Calculate the start time of the next consultation
+                    slotStart = slotEnd.plus(breakDuration);
+                }
+
+                // Move to the next occurrence of the selected day for the next week
+                nextSelectedDay = nextSelectedDay.plusWeeks(1);
             }
 
-            // Move to the next slot
-            slotStartTime = slotEndTime.plusMinutes(breakDuration);
-            slotEndTime = slotStartTime.plusMinutes(slotDuration);
-        }
-
-        // Load the teacher entity within a transactional context
-        Teacher teacher = teacherRepository.findById(teacherId).orElse(null);
-
-        if (teacher != null) {
-            // Add the generated timeslots to the teacher's list
-            teacherService.addTimeslotsToTeacher(teacherId, generatedTimeslots);
+            // Add the generated timeslots to the teacher's timeslots
+            teacherService.addTimeslotsToTeacher(teacher.getId(), timeslots);
         }
     }
-
-   // private boolean overlapsExistingTimeslots(Long teacherId, Timeslot newTimeslot) {
-     //   List<Timeslot> existingTimeslots = timeslotRepository.findAllByTeacherIdAndEndTimeAfterAndStartTimeBefore(teacherId, newTimeslot.getStartTime(), newTimeslot.getEndTime());
-      //  return !existingTimeslots.isEmpty();
-   // }
-
 }
+
+
+
 
 

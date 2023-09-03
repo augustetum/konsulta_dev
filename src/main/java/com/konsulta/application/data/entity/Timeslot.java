@@ -37,6 +37,10 @@ public class Timeslot extends AbstractEntity {
     public void setEnd(LocalDateTime end) {
         this.end = end;
     }
+
+    public void setTeacher(Teacher teacher) {
+        this.teacher = teacher;
+    }
 }
 
 

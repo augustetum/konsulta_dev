@@ -70,7 +70,6 @@ public class TeacherAccountPage extends Div {
 
         if (selectedDay != null && startTime != null && endTime != null) {
             timeslotGenerator.generateTimeslots(teacher.getId(), selectedDay, startTime, endTime);
-            Notification.show("Timeslots added.");
         } else {
             Notification.show("Please fill in all the fields.");
         }
