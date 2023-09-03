@@ -24,18 +24,15 @@ public class TimeslotGenerator {
 
     @Transactional
     public void generateTimeslots(Long teacherId, DayOfWeek selectedDay, LocalTime startTime, LocalTime endTime) {
-        // Find the next occurrence of the selected day of the week
+        //the next occurrence of the selected day of the week
         LocalDate currentDate = LocalDate.now();
         LocalDate nextSelectedDay = currentDate.with(TemporalAdjusters.nextOrSame(selectedDay));
 
-        // Calculate the duration of each consultation
-        Duration consultationDuration = Duration.ofMinutes(15);
+        Duration consultationDuration = Duration.ofMinutes(15); //duration of each consultation
 
-        // Calculate the duration of each break
         Duration breakDuration = Duration.ofMinutes(5);
 
-        // Create a list to store the generated timeslots
-        List<Timeslot> timeslots = new ArrayList<>();
+        List<Timeslot> timeslots = new ArrayList<>(); //generated timeslots list
 
         // Fetch the teacher from the database using the teacherId
         Optional<Teacher> teacherOptional = teacherService.get(teacherId);
@@ -43,35 +40,24 @@ public class TimeslotGenerator {
         if (teacherOptional.isPresent()) {
             Teacher teacher = teacherOptional.get();
 
-            // Generate 3 timeslots for the upcoming month
             for (int i = 0; i < 3; i++) {
                 LocalDateTime slotStart = nextSelectedDay.atTime(startTime);
 
                 for (int j = 0; j < 3; j++) {
-                    // Calculate the end time of the consultation
-                    LocalDateTime slotEnd = slotStart.plus(consultationDuration);
 
-                    // Create a new Timeslot object
+                    LocalDateTime slotEnd = slotStart.plus(consultationDuration); //calculates the end time of the consultation
+
                     Timeslot timeslot = new Timeslot(slotStart, slotEnd);
-
-                    // Associate the timeslot with the teacher
                     timeslot.setTeacher(teacher);
-
-                    // Save the timeslot to the database
                     timeslotRepository.save(timeslot);
-
-                    // Add the timeslot to the list
                     timeslots.add(timeslot);
 
-                    // Calculate the start time of the next consultation
-                    slotStart = slotEnd.plus(breakDuration);
+                    slotStart = slotEnd.plus(breakDuration); //calculates the start of the next timeslot w 5 minute break
                 }
 
-                // Move to the next occurrence of the selected day for the next week
                 nextSelectedDay = nextSelectedDay.plusWeeks(1);
             }
 
-            // Add the generated timeslots to the teacher's timeslots
             teacherService.addTimeslotsToTeacher(teacher.getId(), timeslots);
         }
     }

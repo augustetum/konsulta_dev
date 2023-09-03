@@ -56,6 +56,10 @@ public class TeacherService {
         return teacher != null && teacher.getPassword().equals(password);
     }
 
+    public List<Teacher> getAllTeachers() {
+        return repository.findAll();
+    }
+
     public void addTimeslotsToTeacher(Long teacherId, List<Timeslot> timeslots) {
         Optional<Teacher> teacherOptional = repository.findById(teacherId);
         if (teacherOptional.isPresent()) {

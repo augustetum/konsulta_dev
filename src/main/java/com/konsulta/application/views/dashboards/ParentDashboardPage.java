@@ -2,6 +2,7 @@ package com.konsulta.application.views.dashboards;
 
 import com.konsulta.application.data.entity.Parent;
 import com.konsulta.application.data.entity.Teacher;
+import com.konsulta.application.data.service.TeacherService;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.contextmenu.MenuItem;
@@ -10,6 +11,7 @@ import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.menubar.MenuBarVariant;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -19,9 +21,11 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Route("parent-dashboard")
 public class ParentDashboardPage extends VerticalLayout implements BeforeEnterObserver {
+    private final TeacherService teacherService;
     Parent parent = VaadinSession.getCurrent().getAttribute(Parent.class);
     private H1 greeting = new H1();
 
@@ -33,7 +37,10 @@ public class ParentDashboardPage extends VerticalLayout implements BeforeEnterOb
     H3 header = new H3("Konsulta | Dashboard");
     VerticalLayout upcomingColumn = new VerticalLayout();
 
-    public ParentDashboardPage() {
+
+    public ParentDashboardPage(TeacherService teacherService) {
+        this.teacherService = teacherService;
+
         //menu creation in the header
         MenuBar menuBar = new MenuBar();
         menuBar.addThemeVariants(MenuBarVariant.LUMO_TERTIARY);
@@ -41,7 +48,6 @@ public class ParentDashboardPage extends VerticalLayout implements BeforeEnterOb
         MenuItem logOutButton = menuBar.addItem("log out");
 
         myAccountButton.addClickListener(e -> getUI().ifPresent(ui -> ui.navigate("parent-account")));
-
 
         HorizontalLayout headerLayout = new HorizontalLayout();
         headerLayout.setAlignItems(FlexComponent.Alignment.CENTER);
@@ -59,8 +65,33 @@ public class ParentDashboardPage extends VerticalLayout implements BeforeEnterOb
 
         contentLayout.add(formColumn, upcomingColumn);
 
-        add(headerLayout, contentLayout);
+        // Populate the teacherComboBox with available teachers
+        List<Teacher> availableTeachers = teacherService.getAllTeachers(); // Implement getAllTeachers in TeacherService
+        teacherComboBox.setItems(availableTeachers);
+        teacherComboBox.setItemLabelGenerator(this::generateTeacherLabel);
 
+        registerButton.addClickListener(e -> registerTimeslot());
+
+        add(headerLayout, contentLayout);
+    }
+
+    private String generateTeacherLabel(Teacher teacher) {
+        return teacher.getName() + " " + teacher.getSurname() + " | " + teacher.getSubject();
+    }
+
+
+    private void registerTimeslot() {
+        Teacher selectedTeacher = teacherComboBox.getValue();
+        LocalDateTime selectedTimeslot = timeslotComboBox.getValue();
+
+        if (selectedTeacher != null && selectedTimeslot != null) {
+            // Implement the logic to register the selected timeslot with the selected teacher
+            // You can use teacherService to perform the registration
+            // Display a success message or handle the registration logic here
+            // Example: teacherService.registerTimeslot(selectedTeacher, selectedTimeslot);
+        } else {
+            Notification.show("Please select a teacher and a timeslot.");
+        }
     }
 
     @Override
@@ -86,4 +117,5 @@ public class ParentDashboardPage extends VerticalLayout implements BeforeEnterOb
         // }
     }
 }
+
 
