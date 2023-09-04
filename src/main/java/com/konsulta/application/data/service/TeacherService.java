@@ -4,6 +4,7 @@ import com.konsulta.application.data.entity.Parent;
 import com.konsulta.application.data.entity.Teacher;
 import com.konsulta.application.data.entity.Timeslot;
 import com.konsulta.application.data.repository.TeacherRepository;
+import jakarta.transaction.Transactional;
 import org.hibernate.Hibernate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -68,6 +69,17 @@ public class TeacherService {
             teacher.getTimeslots().addAll(timeslots);
             repository.save(teacher);
         }
+    }
+
+    @Transactional
+    public List<Timeslot> getAvailableTimeslots(Teacher teacher) {
+        // Retrieve all timeslots for the teacher
+        List<Timeslot> allTimeslots = teacher.getTimeslots();
+
+        // TODO: Implement logic to filter out unavailable timeslots
+        // filter out timeslots that have existing appointments
+
+        return allTimeslots;
     }
 
 }

@@ -10,7 +10,7 @@ public class Teacher extends Account {
     private String subject;
     private String classroom;
 
-    @OneToMany
+    @OneToMany(mappedBy = "teacher", fetch = FetchType.EAGER)
     private List<Timeslot> timeslots;
 
     public List<Timeslot> getTimeslots() {

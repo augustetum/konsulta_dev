@@ -2,6 +2,7 @@ package com.konsulta.application.views.dashboards;
 
 import com.konsulta.application.data.entity.Parent;
 import com.konsulta.application.data.entity.Teacher;
+import com.konsulta.application.data.entity.Timeslot;
 import com.konsulta.application.data.service.TeacherService;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -15,13 +16,19 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.data.renderer.TextRenderer;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
+import jakarta.transaction.Transactional;
+import org.hibernate.Hibernate;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Route("parent-dashboard")
 public class ParentDashboardPage extends VerticalLayout implements BeforeEnterObserver {
@@ -31,7 +38,7 @@ public class ParentDashboardPage extends VerticalLayout implements BeforeEnterOb
 
 
     ComboBox<Teacher> teacherComboBox = new ComboBox<>("Select a Teacher");
-    ComboBox<LocalDateTime> timeslotComboBox = new ComboBox<>("Select a Timeslot");
+    ComboBox<Timeslot> timeslotComboBox = new ComboBox<>("Select a Timeslot");
     Button registerButton = new Button("Register");
 
     H3 header = new H3("Konsulta | Dashboard");
@@ -70,6 +77,24 @@ public class ParentDashboardPage extends VerticalLayout implements BeforeEnterOb
         teacherComboBox.setItems(availableTeachers);
         teacherComboBox.setItemLabelGenerator(this::generateTeacherLabel);
 
+        // Populate the timeslotComboBox with available timeslots
+        teacherComboBox.addValueChangeListener(e -> {
+            Teacher selectedTeacher = teacherComboBox.getValue();
+            System.out.println(selectedTeacher);
+            if (selectedTeacher != null) {
+                List<Timeslot> availableTimeslots = teacherService.getAvailableTimeslots(selectedTeacher);
+                availableTimeslots.sort(Comparator.comparing(Timeslot::getStart));
+
+                timeslotComboBox.setItems(availableTimeslots);
+                timeslotComboBox.setItemLabelGenerator(timeslot -> {
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+                    return timeslot.getStart().format(formatter) + " - " + timeslot.getEnd().format(formatter);
+                });
+            } else {
+                timeslotComboBox.setItems();
+            }
+        });
+
         registerButton.addClickListener(e -> registerTimeslot());
 
         add(headerLayout, contentLayout);
@@ -79,10 +104,9 @@ public class ParentDashboardPage extends VerticalLayout implements BeforeEnterOb
         return teacher.getName() + " " + teacher.getSurname() + " | " + teacher.getSubject();
     }
 
-
     private void registerTimeslot() {
         Teacher selectedTeacher = teacherComboBox.getValue();
-        LocalDateTime selectedTimeslot = timeslotComboBox.getValue();
+        Timeslot selectedTimeslot = timeslotComboBox.getValue();
 
         if (selectedTeacher != null && selectedTimeslot != null) {
             // Implement the logic to register the selected timeslot with the selected teacher
