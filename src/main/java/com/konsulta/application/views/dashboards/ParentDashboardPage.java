@@ -1,8 +1,8 @@
 package com.konsulta.application.views.dashboards;
 
-import com.konsulta.application.data.entity.Parent;
-import com.konsulta.application.data.entity.Teacher;
-import com.konsulta.application.data.entity.Timeslot;
+import com.konsulta.application.data.entity.*;
+import com.konsulta.application.data.repository.ConsultationRepository;
+import com.konsulta.application.data.service.ConsultationService;
 import com.konsulta.application.data.service.TeacherService;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -16,24 +16,21 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.data.renderer.TextRenderer;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
-import jakarta.transaction.Transactional;
-import org.hibernate.Hibernate;
 
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Route("parent-dashboard")
 public class ParentDashboardPage extends VerticalLayout implements BeforeEnterObserver {
     private final TeacherService teacherService;
-    Parent parent = VaadinSession.getCurrent().getAttribute(Parent.class);
+    private final ConsultationRepository consultationRepository;
+    private final ConsultationService consultationService;;
+    Parent parent = (Parent) VaadinSession.getCurrent().getAttribute("parent");
     private H1 greeting = new H1();
 
 
@@ -44,9 +41,35 @@ public class ParentDashboardPage extends VerticalLayout implements BeforeEnterOb
     H3 header = new H3("Konsulta | Dashboard");
     VerticalLayout upcomingColumn = new VerticalLayout();
 
+    @Override
+    public void beforeEnter(BeforeEnterEvent event) {
+        if (parent != null) {
+            String parentName = parent.getName();
+            greeting.setText("Hello, " + parentName + "!");
 
-    public ParentDashboardPage(TeacherService teacherService) {
+            boolean hasConsultations = consultationService.parentHasConsultations(parent);
+
+            if (!hasConsultations) {
+                H3 upcomingConsultationsHeading = new H3("No consultations yet... register for one!");
+                upcomingColumn.add(upcomingConsultationsHeading);
+            } else {
+                // Display message when there are consultations
+                H3 consultationsMessage = new H3("Upcoming consultations");
+                upcomingColumn.add(consultationsMessage);
+
+                // Implement logic to show the list of upcoming consultations here
+                // You can fetch and display the list of consultations associated with the parent
+            }
+        } else {
+            greeting.setText("Error: Parent object not found");
+        }
+    }
+
+
+    public ParentDashboardPage(TeacherService teacherService, ConsultationRepository consultationRepository, ConsultationService consultationService) {
         this.teacherService = teacherService;
+        this.consultationRepository = consultationRepository;
+        this.consultationService = consultationService;
 
         //menu creation in the header
         MenuBar menuBar = new MenuBar();
@@ -109,37 +132,27 @@ public class ParentDashboardPage extends VerticalLayout implements BeforeEnterOb
         Timeslot selectedTimeslot = timeslotComboBox.getValue();
 
         if (selectedTeacher != null && selectedTimeslot != null) {
-            // Implement the logic to register the selected timeslot with the selected teacher
-            // You can use teacherService to perform the registration
-            // Display a success message or handle the registration logic here
-            // Example: teacherService.registerTimeslot(selectedTeacher, selectedTimeslot);
+            //implement the registration logic
+            Consultation consultation = new Consultation();
+            consultation.setParent(parent);
+            consultation.setTeacher(selectedTeacher);
+            consultation.setTimeslot(selectedTimeslot);
+            consultation.setStatus(ConsultationStatus.SCHEDULED);
+
+            // Save the Consultation to the database
+            consultation = consultationRepository.save(consultation);
+
+            // Remove the selected timeslot from the teacher's available timeslots
+            teacherService.removeScheduledTimeslot(selectedTeacher, selectedTimeslot);
+
+            Notification.show("Timeslot registered!");
+            teacherComboBox.setValue(null);
+            timeslotComboBox.setValue(null);
         } else {
             Notification.show("Please select a teacher and a timeslot.");
         }
     }
 
-    @Override
-    public void beforeEnter(BeforeEnterEvent event) {
-        // if (parent != null) {
-        //   String parentName = parent.getName();
-        //  greeting.setText("Hello, " + parentName + "!");
-        // } else {
-        //    // greeting.setText("Error: Parent object not found");
-        // }
-
-        //if (parent.getConsultations().isEmpty()) {
-        //displays message when there are no consultations yet
-        // H3 upcomingConsultationsHeading = new H3("No consultations yet... register for one!");
-        // upcomingColumn.add(upcomingConsultationsHeading);
-
-        // } else {
-        //displays message when there are consultations and show them
-        //  Div noConsultationsMessage = new Div();
-        //  noConsultationsMessage.setText("Upcoming consultations");
-        //  upcomingColumn.add(noConsultationsMessage);
-        // }
-        // }
-    }
 }
 
 

@@ -82,6 +82,14 @@ public class TeacherService {
         return allTimeslots;
     }
 
+    @Transactional
+    public void removeScheduledTimeslot(Teacher teacher, Timeslot timeslot) {
+        if (teacher != null && timeslot != null) {
+            List<Timeslot> availableTimeslots = teacher.getTimeslots();
+            availableTimeslots.remove(timeslot);
+            repository.save(teacher);
+        }
+    }
 }
 
 

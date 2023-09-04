@@ -1,5 +1,6 @@
 package com.konsulta.application.views.registration;
 
+import com.konsulta.application.data.entity.Parent;
 import com.konsulta.application.data.entity.Teacher;
 import com.konsulta.application.data.service.AdminService;
 import com.konsulta.application.data.service.ParentService;
@@ -62,6 +63,8 @@ public class LoginPage extends VerticalLayout {
             }
 
             else if (parentService.isValidParentLogin(email, password)) {
+                Parent parent = parentService.findByEmail(email); // Fetch the Parent entity
+                UI.getCurrent().getSession().setAttribute("parent", parent);
                 UI.getCurrent().navigate(ParentDashboardPage.class);
                 userType = "parent";
                 Notification.show("You are a parent!", 3000, Notification.Position.TOP_CENTER);
