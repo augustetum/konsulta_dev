@@ -41,6 +41,10 @@ public class Timeslot extends AbstractEntity {
     public void setTeacher(Teacher teacher) {
         this.teacher = teacher;
     }
+
+    public Teacher getTeacher() {
+        return teacher;
+    }
 }
 
 

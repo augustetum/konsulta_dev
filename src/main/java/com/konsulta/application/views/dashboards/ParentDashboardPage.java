@@ -106,6 +106,7 @@ public class ParentDashboardPage extends VerticalLayout implements BeforeEnterOb
             System.out.println(selectedTeacher);
             if (selectedTeacher != null) {
                 List<Timeslot> availableTimeslots = teacherService.getAvailableTimeslots(selectedTeacher);
+                System.out.println(availableTimeslots);
                 availableTimeslots.sort(Comparator.comparing(Timeslot::getStart));
 
                 timeslotComboBox.setItems(availableTimeslots);

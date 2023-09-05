@@ -1,27 +1,31 @@
 package com.konsulta.application.data.service;
 
-import com.konsulta.application.data.entity.Parent;
+import com.konsulta.application.data.entity.Consultation;
+import com.konsulta.application.data.entity.ConsultationStatus;
 import com.konsulta.application.data.entity.Teacher;
 import com.konsulta.application.data.entity.Timeslot;
 import com.konsulta.application.data.repository.TeacherRepository;
 import jakarta.transaction.Transactional;
-import org.hibernate.Hibernate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class TeacherService {
 
     private final TeacherRepository repository;
 
-    public TeacherService(TeacherRepository repository) {
+    private final ConsultationService consultationService;
+
+    public TeacherService(TeacherRepository repository, ConsultationService consultationService) {
         this.repository = repository;
+        this.consultationService = consultationService;
     }
 
     public Optional<Teacher> get(Long id) {
@@ -76,10 +80,29 @@ public class TeacherService {
         // Retrieve all timeslots for the teacher
         List<Timeslot> allTimeslots = teacher.getTimeslots();
 
-        // TODO: Implement logic to filter out unavailable timeslots
-        // filter out timeslots that have existing appointments
+        // Retrieve all consultations associated with the teacher
+        List<Consultation> teacherConsultations = consultationService.getConsultationsByTeacher(teacher);
 
-        return allTimeslots;
+        // Create a set to store the timeslot IDs associated with consultations
+        Set<Long> consultationTimeslotIds = teacherConsultations.stream()
+                .map(Consultation::getTimeslot)
+                .map(Timeslot::getId)
+                .collect(Collectors.toSet());
+
+        // Filter out timeslots that have existing appointments with non-cancelled consultations
+        List<Timeslot> availableTimeslots = allTimeslots.stream()
+                .filter(timeslot -> !consultationTimeslotIds.contains(timeslot.getId()) ||
+                        consultationTimeslotIds.stream().noneMatch(id -> isConsultationCancelled(teacherConsultations, id)))
+                .collect(Collectors.toList());
+
+        return availableTimeslots;
+    }
+
+    private boolean isConsultationCancelled(List<Consultation> consultations, Long timeslotId) {
+        return consultations.stream()
+                .anyMatch(consultation -> consultation.getTimeslot().getId().equals(timeslotId)
+                        && consultation.getStatus() != ConsultationStatus.CANCELLED_BY_TEACHER
+                        && consultation.getStatus() != ConsultationStatus.CANCELLED_BY_PARENT);
     }
 
     @Transactional
