@@ -15,5 +15,7 @@ public interface ConsultationRepository
     boolean existsByParent(Parent parent);
 
     List<Consultation> findByTeacher(Teacher teacher);
+
+    List<Consultation> findByParent(Parent parent);
 }
 

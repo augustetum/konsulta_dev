@@ -5,6 +5,7 @@ import com.konsulta.application.data.repository.ConsultationRepository;
 import com.konsulta.application.data.service.ConsultationService;
 import com.konsulta.application.data.service.TeacherService;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.charts.model.Label;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.html.Div;
@@ -56,9 +57,7 @@ public class ParentDashboardPage extends VerticalLayout implements BeforeEnterOb
                 // Display message when there are consultations
                 H3 consultationsMessage = new H3("Upcoming consultations");
                 upcomingColumn.add(consultationsMessage);
-
-                // Implement logic to show the list of upcoming consultations here
-                // You can fetch and display the list of consultations associated with the parent
+                populateConsultations();
             }
         } else {
             greeting.setText("Error: Parent object not found");
@@ -153,6 +152,36 @@ public class ParentDashboardPage extends VerticalLayout implements BeforeEnterOb
             Notification.show("Please select a teacher and a timeslot.");
         }
     }
+
+    private void populateConsultations() {
+        // Fetch the parent's consultations
+        List<Consultation> parentConsultations = consultationService.getConsultationsByParent(parent);
+
+        // Iterate through the consultations and create display components
+        for (Consultation consultation : parentConsultations) {
+            // Create a container for the consultation details
+            Div consultationContainer = new Div();
+            consultationContainer.addClassName("consultation-container"); // You can define CSS styles for this class
+
+            // Display teacher name
+            H3 teacherLabel = new H3("Teacher: " + consultation.getTeacher().getName());
+
+            // Display scheduled time
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+            String scheduledTime = consultation.getTimeslot().getStart().format(formatter) +
+                    " - " +
+                    consultation.getTimeslot().getEnd().format(formatter);
+            H3 timeLabel = new H3("Scheduled Time: " + scheduledTime);
+
+            // Add "cancel" and "join" buttons (not functional yet)
+            Button cancelBtn = new Button("Cancel");
+            Button joinBtn = new Button("Join");
+
+            consultationContainer.add(teacherLabel, timeLabel, cancelBtn, joinBtn);
+            upcomingColumn.add(consultationContainer);
+        }
+    }
+
 
 }
 

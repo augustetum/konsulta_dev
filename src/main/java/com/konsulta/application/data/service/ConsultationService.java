@@ -24,6 +24,11 @@ public class ConsultationService {
         return consultationRepository.findByTeacher(teacher);
     }
 
+    @Transactional
+    public List<Consultation> getConsultationsByParent(Parent parent) {
+        return consultationRepository.findByParent(parent);
+    }
+
     public boolean parentHasConsultations(Parent parent) {
         return consultationRepository.existsByParent(parent);
     }
