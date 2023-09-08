@@ -32,6 +32,9 @@ public class ConsultationService {
     public boolean parentHasConsultations(Parent parent) {
         return consultationRepository.existsByParent(parent);
     }
+    public boolean teacherHasConsultations(Teacher teacher) {
+        return consultationRepository.existsByTeacher(teacher);
+    }
 
 
 }
