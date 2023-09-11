@@ -3,6 +3,8 @@ package com.konsulta.application.views.registration;
 import com.konsulta.application.data.entity.Parent;
 import com.konsulta.application.data.entity.Student;
 import com.konsulta.application.data.service.StudentService;
+import com.konsulta.application.views.dashboards.ParentDashboardPage;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.html.H1;
@@ -21,6 +23,8 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.konsulta.application.data.service.ParentService;
+
+import java.util.HashSet;
 
 @Transactional
 @Route("sign-up")
@@ -115,19 +119,30 @@ public class SignUpPage extends VerticalLayout {
 
     private void signUp() {
         if (parentBinder.validate().isOk() && studentBinder.validate().isOk()) {
-            Parent parent = new Parent();
-            parentBinder.writeBeanIfValid(parent);
-
-            Student student = new Student();
-            studentBinder.writeBeanIfValid(student);
-
             try {
-                // Save the Parent and Student using the services
-                parent = parentService.saveParent(parent);
+                // Create and save the Student entity
+                Student student = new Student();
+                studentBinder.writeBeanIfValid(student);
                 student = studentService.saveStudent(student);
 
+                // Create the Parent entity and associate it with the Student
+                Parent parent = new Parent();
+                parentBinder.writeBeanIfValid(parent);
+
+                // Create a new set for children if it doesn't exist
+                if (parent.getChildren() == null) {
+                    parent.setChildren(new HashSet<>());
+                }
+
+                // Add the student to the parent's set of children
+                parent.getChildren().add(student);
+
+                // Save the Parent entity
+                parent = parentService.saveParent(parent);
+
                 // Display a success message
-                Notification.show("Sign up successful!");
+                Notification.show("Sign up successful! Please log in with your account", 3000, Notification.Position.MIDDLE);
+                UI.getCurrent().navigate(LoginPage.class);
             } catch (Exception e) {
                 // Handle database error
                 Notification.show("Error signing up. Please try again.", 3000, Notification.Position.TOP_CENTER);
@@ -137,6 +152,5 @@ public class SignUpPage extends VerticalLayout {
             Notification.show("Please fix the validation errors", 3000, Notification.Position.TOP_CENTER);
         }
     }
-
 }
 

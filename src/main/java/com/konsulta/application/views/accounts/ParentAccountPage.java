@@ -2,6 +2,8 @@ package com.konsulta.application.views.accounts;
 
 import com.konsulta.application.data.entity.Parent;
 import com.konsulta.application.data.entity.Student;
+import com.konsulta.application.data.service.ParentService;
+import com.konsulta.application.data.service.StudentService;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -17,14 +19,25 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 
+import java.util.HashSet;
+
 @Route("parent-account")
 public class ParentAccountPage extends VerticalLayout {
-    private Parent parent = VaadinSession.getCurrent().getAttribute(Parent.class);
+    Parent parent = (Parent) VaadinSession.getCurrent().getAttribute("parent");
+    private final Binder<Student> studentBinder = new Binder<>(Student.class);
+    private final StudentService studentService;
+    private final ParentService parentService;
 
-    public ParentAccountPage() {
+    public ParentAccountPage(StudentService studentService, ParentService parentService) {
+        this.studentService = studentService;
+        this.parentService = parentService;
+
+        parent = parentService.initializeParent(parent);
+
         H3 header = new H3("Konsulta | My account");
 
         MenuBar menuBar = new MenuBar();
@@ -42,15 +55,53 @@ public class ParentAccountPage extends VerticalLayout {
         add(headerLayout);
 
         // Add Child
-        TextField childNameField = new TextField("Child's Name");
+        TextField studentNameField = new TextField("Child's Name");
+        TextField studentSurnameField = new TextField("Child's Surname");
         ComboBox<String> classComboBox = new ComboBox<>("Student class");
+        classComboBox.setItems("5A", "5B", "5C", "5D");
+        studentBinder.forField(studentNameField)
+                .asRequired("Student name cannot be empty")
+                .bind(Student::getStudentName, Student::setStudentName);
+
+        studentBinder.forField(studentSurnameField)
+                .asRequired("Student surname cannot be empty")
+                .bind(Student::getStudentSurname, Student::setStudentSurname);
+
+        studentBinder.forField(classComboBox)
+                .asRequired("Please select a class")
+                .bind(Student::getStudentClass, Student::setStudentClass);
         Button addChildButton = new Button("Add Child", event -> {
-            String childName = childNameField.getValue();
-            String childClass = classComboBox.getValue();
-            if (!childName.isEmpty() && !classComboBox.isEmpty()) {
-                //Student child = new Student(childName, childClass);
-                //parent.getKids().add(child);
-                Notification.show("Child added: " + childName);
+
+            if (studentBinder.validate().isOk()) {
+                Student student = new Student();
+                studentBinder.writeBeanIfValid(student);
+                parent.getChildren().size();
+
+                try {
+                       // Save student to database
+                    student = studentService.saveStudent(student);
+
+                    // Create a new set for children if it doesn't exist
+                    if (parent.getChildren() == null) {
+                        parent.setChildren(new HashSet<>());
+                    }
+
+                    // Add the student to the parent's set of children
+                    parent.getChildren().add(student);
+
+                    // Save the Parent entity
+                    parent = parentService.saveParent(parent);
+
+                    // Display a success message
+                    Notification.show("A child added successfully.");
+                } catch (Exception e) {
+                    // Handle database error
+                    e.printStackTrace();
+                    Notification.show("Error adding the student. Please try again.", 3000, Notification.Position.TOP_CENTER);
+                }
+            } else {
+                // Display validation errors
+                Notification.show("Please fix the validation errors", 3000, Notification.Position.TOP_CENTER);
             }
         });
 
@@ -99,7 +150,7 @@ public class ParentAccountPage extends VerticalLayout {
         });
 
         // Adding components to form layout
-        add(new HorizontalLayout(childNameField, classComboBox), addChildButton, newPasswordField, changePasswordButton,
+        add(new HorizontalLayout(studentNameField, studentSurnameField, classComboBox), addChildButton, newPasswordField, changePasswordButton,
                 deleteAccountButton, newPhoneNumberField, changePhoneNumberButton);
     }
 

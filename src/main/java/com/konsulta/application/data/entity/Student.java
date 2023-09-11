@@ -3,9 +3,11 @@ package com.konsulta.application.data.entity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
+import java.io.Serializable;
+
 @Entity
 @Table(name = "kon_students")
-public class Student extends AbstractEntity{
+public class Student extends AbstractEntity implements Serializable {
 
     private String studentName;
     private String studentSurname;
