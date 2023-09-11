@@ -1,11 +1,14 @@
 package com.konsulta.application.data.service;
 
 import com.konsulta.application.data.entity.Parent;
+import com.konsulta.application.data.entity.Teacher;
 import com.konsulta.application.data.repository.ParentRepository;
 import org.hibernate.Hibernate;
 import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import javax.mail.MessagingException;
 
 @Service
 public class ParentService {
@@ -40,6 +43,18 @@ public class ParentService {
         return parent;
     }
 
+    //generates a confirmation email for the parent
+    public void sendConfirmationEmailToParent(Parent parent, Teacher selectedTeacher, String scheduledTime) {
+        String parentEmail = parent.getEmail();
+        String parentSubject = "Consultation Confirmation";
+        String parentContent = "Your consultation with " + selectedTeacher.getName() + " is scheduled for " + scheduledTime;
+
+        try {
+            EmailSender.sendEmail(parentEmail, parentSubject, parentContent);
+        } catch (MessagingException e) {
+            e.printStackTrace(); // Handle email sending errors
+        }
+    }
 
 }
 

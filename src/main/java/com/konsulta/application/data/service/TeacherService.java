@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import javax.mail.MessagingException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -113,6 +114,20 @@ public class TeacherService {
             repository.save(teacher);
         }
     }
+
+    public void sendNotificationEmailToTeacher(Teacher selectedTeacher, String scheduledTime) {
+        String teacherEmail = selectedTeacher.getEmail();
+        String teacherSubject = "New Consultation Request";
+        String teacherContent = "A new consultation has been scheduled with you for " + scheduledTime;
+
+        try {
+            EmailSender.sendEmail(teacherEmail, teacherSubject, teacherContent);
+        } catch (MessagingException e) {
+            e.printStackTrace(); // Handle email sending errors
+        }
+    }
+
+
 }
 
 

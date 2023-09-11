@@ -3,9 +3,10 @@ package com.konsulta.application.views.dashboards;
 import com.konsulta.application.data.entity.*;
 import com.konsulta.application.data.repository.ConsultationRepository;
 import com.konsulta.application.data.service.ConsultationService;
+import com.konsulta.application.data.service.EmailSender;
+import com.konsulta.application.data.service.ParentService;
 import com.konsulta.application.data.service.TeacherService;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.charts.model.Label;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.html.Div;
@@ -22,6 +23,7 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 
+import javax.mail.MessagingException;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
@@ -29,8 +31,9 @@ import java.util.List;
 @Route("parent-dashboard")
 public class ParentDashboardPage extends VerticalLayout implements BeforeEnterObserver {
     private final TeacherService teacherService;
+    private final ParentService parentService;
     private final ConsultationRepository consultationRepository;
-    private final ConsultationService consultationService;;
+    private final ConsultationService consultationService;
     Parent parent = (Parent) VaadinSession.getCurrent().getAttribute("parent");
     private H1 greeting = new H1();
 
@@ -65,8 +68,9 @@ public class ParentDashboardPage extends VerticalLayout implements BeforeEnterOb
     }
 
 
-    public ParentDashboardPage(TeacherService teacherService, ConsultationRepository consultationRepository, ConsultationService consultationService) {
+    public ParentDashboardPage(TeacherService teacherService, ParentService parentService, ConsultationRepository consultationRepository, ConsultationService consultationService) {
         this.teacherService = teacherService;
+        this.parentService = parentService;
         this.consultationRepository = consultationRepository;
         this.consultationService = consultationService;
 
@@ -95,7 +99,7 @@ public class ParentDashboardPage extends VerticalLayout implements BeforeEnterOb
         contentLayout.add(formColumn, upcomingColumn);
 
         // Populate the teacherComboBox with available teachers
-        List<Teacher> availableTeachers = teacherService.getAllTeachers(); // Implement getAllTeachers in TeacherService
+        List<Teacher> availableTeachers = teacherService.getAllTeachers();
         teacherComboBox.setItems(availableTeachers);
         teacherComboBox.setItemLabelGenerator(this::generateTeacherLabel);
 
@@ -148,25 +152,34 @@ public class ParentDashboardPage extends VerticalLayout implements BeforeEnterOb
             Notification.show("Timeslot registered!");
             teacherComboBox.setValue(null);
             timeslotComboBox.setValue(null);
+
+            //format the timeslot to String format
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+            String scheduledTime = consultation.getTimeslot().getStart().format(formatter) +
+                    " - " +
+                    consultation.getTimeslot().getEnd().format(formatter);
+
+            //send emails to teacher and parent
+            parentService.sendConfirmationEmailToParent(parent, selectedTeacher, scheduledTime);
+            teacherService.sendNotificationEmailToTeacher(selectedTeacher, scheduledTime);
+
         } else {
             Notification.show("Please select a teacher and a timeslot.");
         }
+
     }
 
     private void populateConsultations() {
-        // Fetch the parent's consultations
+        //fetch the consultations from the database
         List<Consultation> parentConsultations = consultationService.getConsultationsByParent(parent);
 
-        // Iterate through the consultations and create display components
         for (Consultation consultation : parentConsultations) {
-            // Create a container for the consultation details
+            //create a container for each consultation
             Div consultationContainer = new Div();
-            consultationContainer.addClassName("consultation-container"); // You can define CSS styles for this class
+            consultationContainer.addClassName("consultation-container");
 
-            // Display teacher name
             H3 teacherLabel = new H3("Teacher: " + consultation.getTeacher().getName());
 
-            // Display scheduled time
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
             String scheduledTime = consultation.getTimeslot().getStart().format(formatter) +
                     " - " +
@@ -174,15 +187,13 @@ public class ParentDashboardPage extends VerticalLayout implements BeforeEnterOb
             H3 timeLabel = new H3("Scheduled Time: " + scheduledTime);
 
             // Add "cancel" and "join" buttons (not functional yet)
-            Button cancelBtn = new Button("Cancel");
-            Button joinBtn = new Button("Join");
+            Button cancelButton = new Button("Cancel");
+            Button joinButton = new Button("Join");
 
-            consultationContainer.add(teacherLabel, timeLabel, cancelBtn, joinBtn);
+            consultationContainer.add(teacherLabel, timeLabel, cancelButton, joinButton);
             upcomingColumn.add(consultationContainer);
         }
     }
-
-
 }
 
 
