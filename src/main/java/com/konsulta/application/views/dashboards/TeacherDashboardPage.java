@@ -4,6 +4,7 @@ import com.konsulta.application.data.entity.Consultation;
 import com.konsulta.application.data.entity.Teacher;
 import com.konsulta.application.data.service.ConsultationService;
 import com.konsulta.application.views.accounts.TeacherAccountPage;
+import com.konsulta.application.views.registration.LoginPage;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.contextmenu.MenuItem;
@@ -41,6 +42,10 @@ public class TeacherDashboardPage extends Div implements BeforeEnterObserver {
         MenuItem myAccountButton = menuBar.addItem("my account");
         MenuItem logOutButton = menuBar.addItem("log out");
 
+        logOutButton.addClickListener(e -> {
+            getUI().ifPresent(ui -> ui.navigate(""));
+        });
+
         myAccountButton.addClickListener(e -> UI.getCurrent().navigate(TeacherAccountPage.class));
 
         HorizontalLayout headerLayout = new HorizontalLayout();
@@ -60,7 +65,7 @@ public class TeacherDashboardPage extends Div implements BeforeEnterObserver {
             boolean hasConsultations = consultationService.teacherHasConsultations(teacher);
 
             if (!hasConsultations) {
-                H3 upcomingConsultationsHeading = new H3("No consultations yet... register for one!");
+                H3 upcomingConsultationsHeading = new H3("No consultations yet... wait until someone registers!");
                 upcomingColumn.add(upcomingConsultationsHeading);
             } else {
                 // Display message when there are consultations

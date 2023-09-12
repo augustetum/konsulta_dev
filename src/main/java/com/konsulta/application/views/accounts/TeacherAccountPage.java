@@ -3,6 +3,7 @@ package com.konsulta.application.views.accounts;
 import com.konsulta.application.data.entity.Teacher;
 import com.konsulta.application.data.service.TeacherService;
 import com.konsulta.application.data.service.TimeslotGenerator;
+import com.konsulta.application.views.registration.LoginPage;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.contextmenu.MenuItem;
@@ -45,6 +46,10 @@ public class TeacherAccountPage extends Div {
         menuBar.addThemeVariants(MenuBarVariant.LUMO_TERTIARY);
         MenuItem myAccountButton = menuBar.addItem("dashboard");
         MenuItem logOutButton = menuBar.addItem("log out");
+
+        logOutButton.addClickListener(e -> {
+            getUI().ifPresent(ui -> ui.navigate(""));
+        });
 
         myAccountButton.addClickListener(e -> getUI().ifPresent(ui -> ui.navigate("teacher-dashboard")));
 

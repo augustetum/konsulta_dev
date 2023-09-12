@@ -8,6 +8,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.VaadinSession;
 import org.springframework.stereotype.Component;
 
 @PageTitle("landing-page")
@@ -17,6 +18,9 @@ public class LandingPage extends VerticalLayout {
 
 
     public LandingPage(){
+        if(VaadinSession.getCurrent().getCurrent() != null) {
+            VaadinSession.getCurrent().getSession().invalidate();
+        }
         setAlignItems(Alignment.CENTER);
         setJustifyContentMode(JustifyContentMode.CENTER);
         setHeightFull();

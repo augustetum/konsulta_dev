@@ -6,9 +6,12 @@ import com.konsulta.application.data.repository.ParentRepository;
 import org.hibernate.Hibernate;
 import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import javax.mail.MessagingException;
+import java.util.Optional;
 
 @Service
 public class ParentService {
@@ -18,6 +21,18 @@ public class ParentService {
     @Autowired
     public ParentService(ParentRepository parentRepository) {
         this.parentRepository = parentRepository;
+    }
+
+    public Page<Parent> list(Pageable pageable) {
+        return parentRepository.findAll(pageable);
+    }
+
+    public Optional<Parent> get(Long id) {
+        return parentRepository.findById(id);
+    }
+
+    public Parent update(Parent entity) {
+        return parentRepository.save(entity);
     }
 
     public Parent saveParent(Parent parent) {

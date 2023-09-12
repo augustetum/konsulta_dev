@@ -6,6 +6,7 @@ import com.konsulta.application.data.service.ConsultationService;
 import com.konsulta.application.data.service.EmailSender;
 import com.konsulta.application.data.service.ParentService;
 import com.konsulta.application.data.service.TeacherService;
+import com.konsulta.application.views.registration.LoginPage;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.contextmenu.MenuItem;
@@ -80,6 +81,10 @@ public class ParentDashboardPage extends VerticalLayout implements BeforeEnterOb
         MenuItem myAccountButton = menuBar.addItem("my account");
         MenuItem logOutButton = menuBar.addItem("log out");
 
+        logOutButton.addClickListener(e -> {
+            getUI().ifPresent(ui -> ui.navigate(""));
+        });
+
         myAccountButton.addClickListener(e -> getUI().ifPresent(ui -> ui.navigate("parent-account")));
 
         HorizontalLayout headerLayout = new HorizontalLayout();
@@ -149,7 +154,7 @@ public class ParentDashboardPage extends VerticalLayout implements BeforeEnterOb
             // Remove the selected timeslot from the teacher's available timeslots
             teacherService.removeScheduledTimeslot(selectedTeacher, selectedTimeslot);
 
-            Notification.show("Timeslot registered!");
+            Notification.show("Consultation registered!");
             teacherComboBox.setValue(null);
             timeslotComboBox.setValue(null);
 
@@ -163,6 +168,8 @@ public class ParentDashboardPage extends VerticalLayout implements BeforeEnterOb
             parentService.sendConfirmationEmailToParent(parent, selectedTeacher, scheduledTime);
             teacherService.sendNotificationEmailToTeacher(selectedTeacher, scheduledTime);
 
+            populateConsultations();
+
         } else {
             Notification.show("Please select a teacher and a timeslot.");
         }
@@ -171,6 +178,7 @@ public class ParentDashboardPage extends VerticalLayout implements BeforeEnterOb
 
     private void populateConsultations() {
         //fetch the consultations from the database
+        upcomingColumn.removeAll();
         List<Consultation> parentConsultations = consultationService.getConsultationsByParent(parent);
 
         for (Consultation consultation : parentConsultations) {

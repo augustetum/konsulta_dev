@@ -1,7 +1,7 @@
 package com.konsulta.application.views.masterdetail;
 
-import com.konsulta.application.data.entity.Teacher;
-import com.konsulta.application.data.service.TeacherService;
+import com.konsulta.application.data.entity.Parent;
+import com.konsulta.application.data.service.ParentService;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -30,36 +30,34 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import java.util.Optional;
 
-@PageTitle("Teacher CRUD view")
-@Route(value = "teacher-master-detail/:teacherID?/:action?(edit)")
-@RouteAlias(value = "teacher-crud")
+@PageTitle("Parent CRUD view")
+@Route(value = "parent-master-detail/:parentID?/:action?(edit)")
+@RouteAlias(value = "parent-crud")
 @Uses(Icon.class)
-public class TeacherMasterDetailView extends Div implements BeforeEnterObserver {
+public class ParentMasterDetailView extends Div implements BeforeEnterObserver {
 
-    private final String TEACHER_ID = "teacherID";
-    private final String TEACHER_EDIT_ROUTE_TEMPLATE = "teacher-master-detail/%s/edit";
+    private final String PARENT_ID = "parentID";
+    private final String PARENT_EDIT_ROUTE_TEMPLATE = "parent-master-detail/%s/edit";
 
-    private final Grid<Teacher> grid = new Grid<>(Teacher.class, false);
+    private final Grid<Parent> grid = new Grid<>(Parent.class, false);
 
     private TextField email;
     private TextField password;
     private TextField name;
-    private TextField surname;
-    private TextField subject;
-    private TextField classroom;
+    private TextField phoneNumber;
 
     private final Button cancel = new Button("Cancel");
     private final Button save = new Button("Save");
 
-    private final BeanValidationBinder<Teacher> binder;
+    private final BeanValidationBinder<Parent> binder;
 
-    private Teacher teacher;
+    private Parent parent;
 
-    private final TeacherService teacherService;
+    private final ParentService parentService;
 
-    public TeacherMasterDetailView(TeacherService teacherService) {
-        this.teacherService = teacherService;
-        addClassNames("teacher-master-detail-view");
+    public ParentMasterDetailView(ParentService parentService) {
+        this.parentService = parentService;
+        addClassNames("parent-master-detail-view");
 
         // Create UI
         SplitLayout splitLayout = new SplitLayout();
@@ -76,12 +74,9 @@ public class TeacherMasterDetailView extends Div implements BeforeEnterObserver 
         grid.addColumn("email").setAutoWidth(true);
         grid.addColumn("password").setAutoWidth(true);
         grid.addColumn("name").setAutoWidth(true);
-        grid.addColumn("surname").setAutoWidth(true);
-        grid.addColumn("subject").setAutoWidth(true);
-        grid.addColumn("classroom").setAutoWidth(true);
+        grid.addColumn("phoneNumber").setAutoWidth(true);
 
-
-        grid.setItems(query -> teacherService.list(
+        grid.setItems(query -> parentService.list(
                         PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query)))
                 .stream());
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
@@ -89,15 +84,15 @@ public class TeacherMasterDetailView extends Div implements BeforeEnterObserver 
         // when a row is selected or deselected, populate form
         grid.asSingleSelect().addValueChangeListener(event -> {
             if (event.getValue() != null) {
-                UI.getCurrent().navigate(String.format(TEACHER_EDIT_ROUTE_TEMPLATE, event.getValue().getId()));
+                UI.getCurrent().navigate(String.format(PARENT_EDIT_ROUTE_TEMPLATE, event.getValue().getId()));
             } else {
                 clearForm();
-                UI.getCurrent().navigate(TeacherMasterDetailView.class);
+                UI.getCurrent().navigate(ParentMasterDetailView.class);
             }
         });
 
         // Configure Form
-        binder = new BeanValidationBinder<>(Teacher.class);
+        binder = new BeanValidationBinder<>(Parent.class);
 
         // Bind fields. This is where you'd define e.g. validation rules
         binder.bindInstanceFields(this);
@@ -109,15 +104,15 @@ public class TeacherMasterDetailView extends Div implements BeforeEnterObserver 
 
         save.addClickListener(e -> {
             try {
-                if (this.teacher == null) {
-                    this.teacher = new Teacher();
+                if (this.parent == null) {
+                    this.parent = new Parent();
                 }
-                binder.writeBean(this.teacher);
-                teacherService.update(this.teacher);
+                binder.writeBean(this.parent);
+                parentService.update(this.parent);
                 clearForm();
                 refreshGrid();
                 Notification.show("Data updated");
-                UI.getCurrent().navigate(TeacherMasterDetailView.class);
+                UI.getCurrent().navigate(ParentMasterDetailView.class);
             } catch (ObjectOptimisticLockingFailureException exception) {
                 Notification n = Notification.show(
                         "Error updating the data. Somebody else has updated the record while you were making changes.");
@@ -131,18 +126,18 @@ public class TeacherMasterDetailView extends Div implements BeforeEnterObserver 
 
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
-        Optional<Long> teacherId = event.getRouteParameters().get(TEACHER_ID).map(Long::parseLong);
-        if (teacherId.isPresent()) {
-            Optional<Teacher> teacherFromBackend = teacherService.get(teacherId.get());
-            if (teacherFromBackend.isPresent()) {
-                populateForm(teacherFromBackend.get());
+        Optional<Long> parentId = event.getRouteParameters().get(PARENT_ID).map(Long::parseLong);
+        if (parentId.isPresent()) {
+            Optional<Parent> parentFromBackend = parentService.get(parentId.get());
+            if (parentFromBackend.isPresent()) {
+                populateForm(parentFromBackend.get());
             } else {
                 Notification.show(
-                        String.format("The requested teacher was not found, ID = %s", teacherId.get()), 3000,
+                        String.format("The requested parent was not found, ID = %s", parentId.get()), 3000,
                         Notification.Position.BOTTOM_START);
                 // refresh grid
                 refreshGrid();
-                event.forwardTo(TeacherMasterDetailView.class);
+                event.forwardTo(ParentMasterDetailView.class);
             }
         }
     }
@@ -159,17 +154,14 @@ public class TeacherMasterDetailView extends Div implements BeforeEnterObserver 
         email = new TextField("Email");
         password = new TextField("Password");
         name = new TextField("Name");
-        surname = new TextField("Surname");
-        subject = new TextField("Subject");
-        classroom = new TextField("Classroom");
-        formLayout.add(email, password, name, surname, subject, classroom);
+        phoneNumber = new TextField("Phone Number");
+        formLayout.add(email, password, name, phoneNumber);
 
         editorDiv.add(formLayout);
         createButtonLayout(editorLayoutDiv);
 
         splitLayout.addToSecondary(editorLayoutDiv);
     }
-
 
     private void createButtonLayout(Div editorLayoutDiv) {
         HorizontalLayout buttonLayout = new HorizontalLayout();
@@ -196,9 +188,9 @@ public class TeacherMasterDetailView extends Div implements BeforeEnterObserver 
         populateForm(null);
     }
 
-    private void populateForm(Teacher value) {
-        this.teacher = value;
-        binder.readBean(this.teacher);
+    private void populateForm(Parent value) {
+        this.parent = value;
+        binder.readBean(this.parent);
     }
 }
 
