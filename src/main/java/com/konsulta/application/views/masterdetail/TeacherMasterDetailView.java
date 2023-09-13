@@ -1,7 +1,5 @@
 package com.konsulta.application.views.masterdetail;
 
-import com.konsulta.application.data.entity.Teacher;
-import com.konsulta.application.data.service.TeacherService;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -9,6 +7,7 @@ import com.vaadin.flow.component.dependency.Uses;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.notification.Notification;
@@ -24,10 +23,20 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
+import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import com.konsulta.application.data.entity.Teacher;
+import com.konsulta.application.data.service.TeacherService;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 
 @PageTitle("Teacher CRUD view")
@@ -50,6 +59,7 @@ public class TeacherMasterDetailView extends Div implements BeforeEnterObserver 
 
     private final Button cancel = new Button("Cancel");
     private final Button save = new Button("Save");
+    private final Button export = new Button("Export data");
 
     private final BeanValidationBinder<Teacher> binder;
 
@@ -61,7 +71,6 @@ public class TeacherMasterDetailView extends Div implements BeforeEnterObserver 
         this.teacherService = teacherService;
         addClassNames("teacher-master-detail-view");
 
-        // Create UI
         SplitLayout splitLayout = new SplitLayout();
 
         splitLayout.setPrimaryStyle("width", "70%");
@@ -72,7 +81,7 @@ public class TeacherMasterDetailView extends Div implements BeforeEnterObserver 
 
         add(splitLayout);
 
-        // Configure Grid
+        //creates crud grid
         grid.addColumn("email").setAutoWidth(true);
         grid.addColumn("password").setAutoWidth(true);
         grid.addColumn("name").setAutoWidth(true);
@@ -96,10 +105,10 @@ public class TeacherMasterDetailView extends Div implements BeforeEnterObserver 
             }
         });
 
-        // Configure Form
+        //form creation
         binder = new BeanValidationBinder<>(Teacher.class);
 
-        // Bind fields. This is where you'd define e.g. validation rules
+        //field binder
         binder.bindInstanceFields(this);
 
         cancel.addClickListener(e -> {
@@ -127,6 +136,30 @@ public class TeacherMasterDetailView extends Div implements BeforeEnterObserver 
                 Notification.show("Failed to update the data. Check again that all values are valid");
             }
         });
+        //NEVEIKIA DAR EXCEL EKSPORTAVIMAS
+        export.addClickListener(e -> {
+            byte[] excelData = exportTeachersToExcel();
+
+            if (excelData != null) {
+                StreamResource resource = new StreamResource("teachers.xlsx", () -> new ByteArrayInputStream(excelData));
+                resource.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+                resource.setCacheTime(0);
+
+                Anchor anchor = new Anchor(resource, "");
+                anchor.getElement().setAttribute("download", true);
+
+                // Add the anchor component to your layout
+                add(anchor);
+
+                // Simulate a click on the anchor to trigger the download
+                UI.getCurrent().getPage().executeJs("arguments[0].click();", anchor.getElement());
+            } else {
+                Notification.show("Failed to export data", 3000, Position.MIDDLE);
+            }
+        });
+
+
+
     }
 
     @Override
@@ -170,13 +203,12 @@ public class TeacherMasterDetailView extends Div implements BeforeEnterObserver 
         splitLayout.addToSecondary(editorLayoutDiv);
     }
 
-
     private void createButtonLayout(Div editorLayoutDiv) {
         HorizontalLayout buttonLayout = new HorizontalLayout();
         buttonLayout.setClassName("button-layout");
         cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        buttonLayout.add(save, cancel);
+        buttonLayout.add(save, cancel, export);
         editorLayoutDiv.add(buttonLayout);
     }
 
@@ -200,5 +232,45 @@ public class TeacherMasterDetailView extends Div implements BeforeEnterObserver 
         this.teacher = value;
         binder.readBean(this.teacher);
     }
+
+    private byte[] exportTeachersToExcel() {
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Teachers");
+
+        // Create headers
+        Row headerRow = sheet.createRow(0);
+        headerRow.createCell(0).setCellValue("Name");
+        headerRow.createCell(1).setCellValue("Surname");
+        headerRow.createCell(2).setCellValue("Consultations");
+
+        //fetch the teachers' data from your service
+        List<Teacher> teachers = teacherService.getAllTeachers();
+
+        int rowNum = 1;
+        for (Teacher teacher : teachers) {
+            Row row = sheet.createRow(rowNum++);
+            row.createCell(0).setCellValue(teacher.getName());
+            row.createCell(1).setCellValue(teacher.getSurname());
+
+            // Replace with the logic to get the number of consultations for each teacher
+            int numberOfConsultations = getNumberOfConsultationsForTeacher(teacher);
+            row.createCell(2).setCellValue(numberOfConsultations);
+        }
+
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            workbook.write(outputStream);
+            return outputStream.toByteArray();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private int getNumberOfConsultationsForTeacher(Teacher teacher) {
+        // Implement the logic to fetch the number of consultations for a teacher
+        // You should replace this with your actual logic or service call
+        return 0; // Default value, replace with actual number
+    }
 }
+
 
