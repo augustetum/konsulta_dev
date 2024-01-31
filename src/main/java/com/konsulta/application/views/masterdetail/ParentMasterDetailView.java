@@ -2,6 +2,7 @@ package com.konsulta.application.views.masterdetail;
 
 import com.konsulta.application.data.entity.Parent;
 import com.konsulta.application.data.service.ParentService;
+import com.konsulta.application.views.registration.LoginPage;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -126,6 +127,15 @@ public class ParentMasterDetailView extends Div implements BeforeEnterObserver {
 
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
+
+        //Role-based access control (RBAC)
+        String userType = (String) UI.getCurrent().getSession().getAttribute("userType"); //retrieve userType from login session
+
+        if (!"admin".equals(userType)) {
+            Notification.show("Access denied. Only admin can access this page.", 3000, Notification.Position.MIDDLE);
+            event.rerouteTo(LoginPage.class); //does not let anyone other than the admin to access this page
+        }
+
         Optional<Long> parentId = event.getRouteParameters().get(PARENT_ID).map(Long::parseLong);
         if (parentId.isPresent()) {
             Optional<Parent> parentFromBackend = parentService.get(parentId.get());

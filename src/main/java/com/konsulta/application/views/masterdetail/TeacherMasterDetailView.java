@@ -1,5 +1,7 @@
 package com.konsulta.application.views.masterdetail;
 
+import com.konsulta.application.data.service.ConsultationService;
+import com.konsulta.application.views.registration.LoginPage;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -36,6 +38,7 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.file.AccessDeniedException;
 import java.util.List;
 import java.util.Optional;
 
@@ -66,9 +69,11 @@ public class TeacherMasterDetailView extends Div implements BeforeEnterObserver 
     private Teacher teacher;
 
     private final TeacherService teacherService;
+    private final ConsultationService consultationService;
 
-    public TeacherMasterDetailView(TeacherService teacherService) {
+    public TeacherMasterDetailView(TeacherService teacherService, ConsultationService consultationService) {
         this.teacherService = teacherService;
+        this.consultationService = consultationService;
         addClassNames("teacher-master-detail-view");
 
         SplitLayout splitLayout = new SplitLayout();
@@ -136,7 +141,7 @@ public class TeacherMasterDetailView extends Div implements BeforeEnterObserver 
                 Notification.show("Failed to update the data. Check again that all values are valid");
             }
         });
-        //NEVEIKIA DAR EXCEL EKSPORTAVIMAS
+        //XML EXPORT - creates XML file with all the data from the grid
         export.addClickListener(e -> {
             byte[] excelData = exportTeachersToExcel();
 
@@ -148,10 +153,8 @@ public class TeacherMasterDetailView extends Div implements BeforeEnterObserver 
                 Anchor anchor = new Anchor(resource, "");
                 anchor.getElement().setAttribute("download", true);
 
-                // Add the anchor component to your layout
                 add(anchor);
 
-                // Simulate a click on the anchor to trigger the download
                 UI.getCurrent().getPage().executeJs("arguments[0].click();", anchor.getElement());
             } else {
                 Notification.show("Failed to export data", 3000, Position.MIDDLE);
@@ -164,6 +167,13 @@ public class TeacherMasterDetailView extends Div implements BeforeEnterObserver 
 
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
+        String userType = (String) UI.getCurrent().getSession().getAttribute("userType");
+
+        if (!"admin".equals(userType)) {
+            Notification.show("Access denied. Only admin can access this page.", 3000, Notification.Position.MIDDLE);
+            event.rerouteTo(LoginPage.class);
+        }
+
         Optional<Long> teacherId = event.getRouteParameters().get(TEACHER_ID).map(Long::parseLong);
         if (teacherId.isPresent()) {
             Optional<Teacher> teacherFromBackend = teacherService.get(teacherId.get());
@@ -233,17 +243,17 @@ public class TeacherMasterDetailView extends Div implements BeforeEnterObserver 
         binder.readBean(this.teacher);
     }
 
+    //EXCEL EXPORT - CfS No.3 - creates an XLSX file with teacher consultation data for the admin to see
     private byte[] exportTeachersToExcel() {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Teachers");
 
-        // Create headers
         Row headerRow = sheet.createRow(0);
         headerRow.createCell(0).setCellValue("Name");
         headerRow.createCell(1).setCellValue("Surname");
         headerRow.createCell(2).setCellValue("Consultations");
 
-        //fetch the teachers' data from your service
+        //fetch the teachers' data from database
         List<Teacher> teachers = teacherService.getAllTeachers();
 
         int rowNum = 1;
@@ -252,7 +262,6 @@ public class TeacherMasterDetailView extends Div implements BeforeEnterObserver 
             row.createCell(0).setCellValue(teacher.getName());
             row.createCell(1).setCellValue(teacher.getSurname());
 
-            // Replace with the logic to get the number of consultations for each teacher
             int numberOfConsultations = getNumberOfConsultationsForTeacher(teacher);
             row.createCell(2).setCellValue(numberOfConsultations);
         }
@@ -267,9 +276,7 @@ public class TeacherMasterDetailView extends Div implements BeforeEnterObserver 
     }
 
     private int getNumberOfConsultationsForTeacher(Teacher teacher) {
-        // Implement the logic to fetch the number of consultations for a teacher
-        // You should replace this with your actual logic or service call
-        return 0; // Default value, replace with actual number
+        return consultationService.getConsultationsByTeacher(teacher).size();
     }
 }
 

@@ -4,7 +4,6 @@ import com.konsulta.application.data.entity.Parent;
 import com.konsulta.application.data.entity.Teacher;
 import com.konsulta.application.data.repository.ParentRepository;
 import org.hibernate.Hibernate;
-import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -70,6 +69,8 @@ public class ParentService {
             e.printStackTrace(); // Handle email sending errors
         }
     }
+
+
 
 }
 

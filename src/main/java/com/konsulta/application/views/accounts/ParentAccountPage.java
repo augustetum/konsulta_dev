@@ -1,16 +1,13 @@
 package com.konsulta.application.views.accounts;
-
 import com.konsulta.application.data.entity.Parent;
 import com.konsulta.application.data.entity.Student;
 import com.konsulta.application.data.service.ParentService;
 import com.konsulta.application.data.service.StudentService;
-import com.konsulta.application.views.registration.LoginPage;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.dialog.Dialog;
-import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.menubar.MenuBarVariant;
@@ -23,8 +20,8 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
-
 import java.util.HashSet;
+import java.util.Optional;
 
 @Route("parent-account")
 public class ParentAccountPage extends VerticalLayout {
@@ -59,7 +56,7 @@ public class ParentAccountPage extends VerticalLayout {
 
         add(headerLayout);
 
-        // Add Child
+        //ADD CHILD FUNCTIONALITY - if a parent has one than more child in the school, they can be added here
         TextField studentNameField = new TextField("Child's Name");
         TextField studentSurnameField = new TextField("Child's Surname");
         ComboBox<String> classComboBox = new ComboBox<>("Student class");
@@ -83,34 +80,28 @@ public class ParentAccountPage extends VerticalLayout {
                 parent.getChildren().size();
 
                 try {
-                       // Save student to database
+
                     student = studentService.saveStudent(student);
 
-                    // Create a new set for children if it doesn't exist
                     if (parent.getChildren() == null) {
                         parent.setChildren(new HashSet<>());
                     }
 
-                    // Add the student to the parent's set of children
                     parent.getChildren().add(student);
 
-                    // Save the Parent entity
                     parent = parentService.saveParent(parent);
 
-                    // Display a success message
                     Notification.show("A child added successfully.");
                 } catch (Exception e) {
-                    // Handle database error
                     e.printStackTrace();
                     Notification.show("Error adding the student. Please try again.", 3000, Notification.Position.TOP_CENTER);
                 }
             } else {
-                // Display validation errors
                 Notification.show("Please fix the validation errors", 3000, Notification.Position.TOP_CENTER);
             }
         });
 
-        // Change Password
+        //CHANGE PASSWORD FUNCTIONALITY
         PasswordField newPasswordField = new PasswordField("New Password");
         Button changePasswordButton = new Button("Change Password", event -> {
             String newPassword = newPasswordField.getValue();
@@ -121,7 +112,7 @@ public class ParentAccountPage extends VerticalLayout {
         });
 
 
-        // Change Phone Number
+        //CHANGE PHONE NUMBER FUNCTIONALITY
         TextField newPhoneNumberField = new TextField("New Phone Number");
         Button changePhoneNumberButton = new Button("Change Phone Number", event -> {
             String newPhoneNumber = newPhoneNumberField.getValue();
@@ -130,7 +121,7 @@ public class ParentAccountPage extends VerticalLayout {
                 Notification.show("Phone number changed to: " + newPhoneNumber);
             }
         });
-
+        //DELETE ACCOUNT FUNCTIONALITY
         Button deleteAccountButton = new Button("Delete Account");
         deleteAccountButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
         deleteAccountButton.addClickListener(e -> {
@@ -139,7 +130,8 @@ public class ParentAccountPage extends VerticalLayout {
             H3 confirmationLabel = new H3("Are you sure you want to delete this account?");
 
             Button confirmButton = new Button("Yes", confirmEvent -> {
-                //parent.getParents().remove(parent);
+           // parentService.deleteParent(parent);
+
                 VaadinSession.getCurrent().setAttribute(Parent.class, null);
                 confirmationDialog.close();
                 Notification.show("Account deleted.");
@@ -154,7 +146,7 @@ public class ParentAccountPage extends VerticalLayout {
 
         });
 
-        // Adding components to form layout
+        //FORM LAYOUT
         add(new HorizontalLayout(studentNameField, studentSurnameField, classComboBox), addChildButton, newPasswordField, changePasswordButton,
                 deleteAccountButton, newPhoneNumberField, changePhoneNumberButton);
     }
