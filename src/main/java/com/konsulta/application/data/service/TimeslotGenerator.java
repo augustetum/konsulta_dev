@@ -59,6 +59,13 @@ public class TimeslotGenerator {
             teacherService.addTimeslotsToTeacher(teacher.getId(), timeslots);
         }
     }
+
+    @Transactional
+    public void handleUnavailability(Long teacherId, LocalDate startDate, LocalDate endDate) {
+        // Logic to handle unavailability:
+        // 1. Delete or mark as unavailable existing timeslots within the range
+        // 2. Adjust the timeslot generation logic to skip the unavailable period
+    }
 }
 
 
