@@ -31,11 +31,6 @@ public class Account extends AbstractEntity {
     public String getSurname(){return surname; }
     public void setSurname(String surname){this.surname = surname; }
 
-    //Login method
-    public boolean login(String email, String password) {
-        return (this.email.equals(email) && this.password.equals(password));
-    }
-
     //To string
     public String toString() {
         return "Account{" +

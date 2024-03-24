@@ -5,11 +5,14 @@ import com.konsulta.application.data.repository.TimeslotRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import java.time.*;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Service
 public class TimeslotGenerator {
@@ -22,43 +25,45 @@ public class TimeslotGenerator {
 
     @Transactional
     public void generateTimeslots(Long teacherId, DayOfWeek selectedDay, LocalTime startTime, LocalTime endTime) {
-        //the next occurrence of the selected day of the week
-        LocalDate currentDate = LocalDate.now();
-        LocalDate nextSelectedDay = currentDate.with(TemporalAdjusters.nextOrSame(selectedDay));
-
-        Duration consultationDuration = Duration.ofMinutes(15); //duration of each consultation
-
-        Duration breakDuration = Duration.ofMinutes(5);
-
-        List<Timeslot> timeslots = new ArrayList<>(); //generated timeslots list
-
-        // Fetch the teacher from the database using the teacherId
-        Optional<Teacher> teacherOptional = teacherService.get(teacherId);
-
+        Optional<Teacher> teacherOptional = teacherService.get(teacherId); //fetches the teacher
         if (teacherOptional.isPresent()) {
             Teacher teacher = teacherOptional.get();
-
-            for (int i = 0; i < 3; i++) {
-                LocalDateTime slotStart = nextSelectedDay.atTime(startTime);
-
-                for (int j = 0; j < 3; j++) {
-
-                    LocalDateTime slotEnd = slotStart.plus(consultationDuration); //calculates the end time of the consultation
-
-                    Timeslot timeslot = new Timeslot(slotStart, slotEnd);
-                    timeslot.setTeacher(teacher);
-                    timeslotRepository.save(timeslot);
-                    timeslots.add(timeslot);
-
-                    slotStart = slotEnd.plus(breakDuration); //calculates the start of the next timeslot w 5 minute break
-                }
-
-                nextSelectedDay = nextSelectedDay.plusWeeks(1);
-            }
-
-            teacherService.addTimeslotsToTeacher(teacher.getId(), timeslots);
+            LocalDate currentDate = LocalDate.now();
+            generateTimeslots(teacher, currentDate, selectedDay, startTime, endTime, 0);
         }
     }
+
+    private void generateTimeslots(Teacher teacher, LocalDate currentDate, DayOfWeek selectedDay, LocalTime startTime, LocalTime endTime, int weekCounter) {
+        if (weekCounter == 3) { //generates for 3 weeks, then stops
+            return;
+        }
+
+        LocalDate nextSelectedDay = currentDate.with(TemporalAdjusters.nextOrSame(selectedDay));
+        List<Timeslot> timeslots = new ArrayList<>();
+
+        LocalDateTime slotStart = nextSelectedDay.atTime(startTime);
+        while (slotStart.toLocalTime().isBefore(endTime)) { // Generate timeslots for the day
+            LocalDateTime slotEnd = slotStart.plusMinutes(15); // End time for a 15-minute consultation
+
+            if (slotEnd.toLocalTime().isAfter(endTime)) {
+                break; // end time is reached, doesn't book after it
+            }
+
+            Timeslot timeslot = new Timeslot(slotStart, slotEnd);
+            timeslot.setTeacher(teacher);
+            timeslotRepository.save(timeslot);
+            timeslots.add(timeslot);
+
+            slotStart = slotEnd.plusMinutes(5); // 5 minute break implemented
+        }
+
+        //adds timeslots for the teacher
+        teacherService.addTimeslotsToTeacher(teacher.getId(), timeslots);
+
+        //recursively generates for another week
+        generateTimeslots(teacher, nextSelectedDay.plusWeeks(1), selectedDay, startTime, endTime, weekCounter + 1);
+    }
+
 
     @Transactional
     public void handleUnavailability(Long teacherId, LocalDate startDate, LocalDate endDate) {

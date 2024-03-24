@@ -95,7 +95,6 @@ public class ParentMasterDetailView extends Div implements BeforeEnterObserver {
         // Configure Form
         binder = new BeanValidationBinder<>(Parent.class);
 
-        // Bind fields. This is where you'd define e.g. validation rules
         binder.bindInstanceFields(this);
 
         cancel.addClickListener(e -> {

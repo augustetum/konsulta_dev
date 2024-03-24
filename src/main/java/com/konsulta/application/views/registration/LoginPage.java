@@ -5,6 +5,7 @@ import com.konsulta.application.data.entity.Teacher;
 import com.konsulta.application.data.service.AdminService;
 import com.konsulta.application.data.service.ParentService;
 import com.konsulta.application.data.service.TeacherService;
+import com.konsulta.application.views.dashboards.AdminDashboardPage;
 import com.konsulta.application.views.dashboards.ParentDashboardPage;
 import com.konsulta.application.views.dashboards.TeacherDashboardPage;
 import com.vaadin.flow.component.UI;
@@ -49,7 +50,7 @@ public class LoginPage extends VerticalLayout {
 
             //check what type of acc it is (admin, teacher or parent)
             if (adminService.isValidAdminLogin(email, password)) {
-                //UI.getCurrent().navigate(AdminDashboardPage.class);
+                UI.getCurrent().navigate(AdminDashboardPage.class);
                 userType = "admin";
                 Notification.show("You are an admin!", 3000, Notification.Position.TOP_CENTER);
             }

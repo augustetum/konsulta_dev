@@ -69,12 +69,25 @@ public class TeacherAccountPage extends Div {
         add(headerLayout, contentLayout);
 
         dayComboBox.setItems(DayOfWeek.values());
-        addButton.addClickListener(event -> addTimeslot());
+        addButton.addClickListener(event -> {
+            if (teacher.getTimeslots().isEmpty()) {
+                addTimeslot();
+                Notification.show("You have successfully added the timeslots", 3000, Notification.Position.TOP_CENTER);
+                addButton.setEnabled(false); //disables the button after adding to avoid duplication
+            }
+            else {
+                addButton.setEnabled(false);
+                Notification.show("Consultations have already been set", 3000, Notification.Position.TOP_CENTER);
+            }
+        });
+
         add(new HorizontalLayout(name, surname));
         add(dayComboBox, startTimePicker, endTimePicker, addButton);
 
         setUnavailabilityButton.addClickListener(event -> handleUnavailability());
         add(unavailabilityStart, unavailabilityEnd, setUnavailabilityButton);
+
+        System.out.println(teacher.getTimeslots());
 
 
     }

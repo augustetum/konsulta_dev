@@ -11,7 +11,7 @@ public class EmailSender {
     public static void sendEmail(String to, String subject, String content) throws MessagingException {
         Properties properties = new Properties();
         properties.put("mail.smtp.host", "smtp.gmail.com");
-        properties.put("mail.smtp.port", "587"); // Adjust the port as needed
+        properties.put("mail.smtp.port", "587");
         properties.put("mail.smtp.auth", "true");
         properties.put("mail.smtp.starttls.enable", "true");
 
