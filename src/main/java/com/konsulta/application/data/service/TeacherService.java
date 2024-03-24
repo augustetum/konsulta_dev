@@ -1,32 +1,40 @@
 package com.konsulta.application.data.service;
 
-import com.konsulta.application.data.entity.Consultation;
-import com.konsulta.application.data.entity.ConsultationStatus;
-import com.konsulta.application.data.entity.Teacher;
-import com.konsulta.application.data.entity.Timeslot;
+import com.konsulta.application.data.entity.*;
+import com.konsulta.application.data.repository.ConsultationRepository;
 import com.konsulta.application.data.repository.TeacherRepository;
+import com.konsulta.application.data.repository.TimeslotRepository;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import com.konsulta.application.data.repository.ConsultationRepository;
 
 import javax.mail.MessagingException;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class TeacherService {
 
     private final TeacherRepository repository;
+    private final TimeslotRepository timeslotRepository;
 
-    private final ConsultationService consultationService;
+    @Lazy
+    @Autowired
+    private  ConsultationService consultationService;
 
-    public TeacherService(TeacherRepository repository, ConsultationService consultationService) {
+    private final ConsultationRepository consultationRepository;
+
+    public TeacherService(TeacherRepository repository, ConsultationRepository consultationRepository, TimeslotRepository timeslotRepository){
         this.repository = repository;
-        this.consultationService = consultationService;
+        this.consultationRepository = consultationRepository;
+        this.timeslotRepository = timeslotRepository;
     }
 
     public Optional<Teacher> get(Long id) {
@@ -76,6 +84,11 @@ public class TeacherService {
         }
     }
 
+    public void addTimeslotsToTeacher(Teacher teacher, Timeslot timeslot) {
+        this.addTimeslotsToTeacher(teacher.getId(), Collections.singletonList(timeslot));
+    }
+
+/*
     @Transactional
     public List<Timeslot> getAvailableTimeslots(Teacher teacher) {
         // Retrieve all timeslots for the teacher
@@ -92,28 +105,64 @@ public class TeacherService {
 
         // Filter out timeslots that have existing appointments with non-cancelled consultations
         List<Timeslot> availableTimeslots = allTimeslots.stream()
-                .filter(timeslot -> !consultationTimeslotIds.contains(timeslot.getId()) ||
-                        consultationTimeslotIds.stream().noneMatch(id -> isConsultationCancelled(teacherConsultations, id)))
+                .filter(timeslot -> {
+                    // Check if the timeslot is not associated with any consultation
+                    boolean isTimeslotFree = !consultationTimeslotIds.contains(timeslot.getId());
+                    // Or if it is associated, ensure the consultation is cancelled by parent
+                    boolean isConsultationCancelled = teacherConsultations.stream()
+                            .filter(consultation -> consultation.getTimeslot().equals(timeslot))
+                            .allMatch(consultation -> consultation.getStatus() == ConsultationStatus.CANCELLED_BY_PARENT);
+                    return isTimeslotFree || isConsultationCancelled;
+                })
+                .collect(Collectors.toList());
+
+        return availableTimeslots;
+    }
+*/
+
+    @Transactional
+    public List<Timeslot> getAvailableTimeslots(Teacher teacher) {
+        List<Timeslot> allTimeslots = teacher.getTimeslots();
+        List<Consultation> teacherConsultations = consultationService.getConsultationsByTeacher(teacher);
+
+        // Identifying timeslots tied to cancelled consultations
+        List<Timeslot> cancelledTimeslots = teacherConsultations.stream()
+                .filter(consultation -> consultation.getStatus() == ConsultationStatus.CANCELLED_BY_PARENT)
+                .map(Consultation::getTimeslot)
+                .collect(Collectors.toList());
+
+        // Cloning and persisting new timeslots for each cancelled one
+        List<Timeslot> clonedTimeslots = new ArrayList<>();
+        for (Timeslot cancelledTimeslot : cancelledTimeslots) {
+            Timeslot newTimeslot = cloneTimeslot(cancelledTimeslot);
+            // Assuming there's a repository or service to save timeslots
+            timeslotRepository.save(newTimeslot);
+            clonedTimeslots.add(newTimeslot);
+        }
+
+        // Combining allTimeslots with clonedTimeslots, excluding original cancelled ones
+        Set<Long> cancelledTimeslotIds = cancelledTimeslots.stream()
+                .map(Timeslot::getId)
+                .collect(Collectors.toSet());
+
+        List<Timeslot> availableTimeslots = Stream.concat(
+                        allTimeslots.stream()
+                                .filter(timeslot -> !cancelledTimeslotIds.contains(timeslot.getId())), // Excluding cancelled
+                        clonedTimeslots.stream()) // Including cloned
                 .collect(Collectors.toList());
 
         return availableTimeslots;
     }
 
-    private boolean isConsultationCancelled(List<Consultation> consultations, Long timeslotId) {
-        return consultations.stream()
-                .anyMatch(consultation -> consultation.getTimeslot().getId().equals(timeslotId)
-                        && consultation.getStatus() != ConsultationStatus.CANCELLED_BY_TEACHER
-                        && consultation.getStatus() != ConsultationStatus.CANCELLED_BY_PARENT);
+    private Timeslot cloneTimeslot(Timeslot original) {
+        Timeslot clone = new Timeslot();
+        // Copy properties from original to clone, except ID
+        clone.setStart(original.getStart());
+        clone.setEnd(original.getEnd());
+        // Copy any other necessary properties here
+        return clone;
     }
 
-    @Transactional
-    public void removeScheduledTimeslot(Teacher teacher, Timeslot timeslot) {
-        if (teacher != null && timeslot != null) {
-            List<Timeslot> availableTimeslots = teacher.getTimeslots();
-            availableTimeslots.remove(timeslot);
-            repository.save(teacher);
-        }
-    }
 
     public void sendNotificationEmailToTeacher(Teacher selectedTeacher, String scheduledTime) {
         String teacherEmail = selectedTeacher.getEmail();
@@ -126,6 +175,19 @@ public class TeacherService {
             e.printStackTrace(); // Handle email sending errors
         }
     }
+
+    public void sendCancellationEmailToTeacher(Teacher selectedTeacher, String scheduledTime) {
+        String teacherEmail = selectedTeacher.getEmail();
+        String teacherSubject = "Consultation has been cancelled";
+        String teacherContent = "A consultation has been cancelled at " + scheduledTime + "by a parent. ";
+
+        try {
+            EmailSender.sendEmail(teacherEmail, teacherSubject, teacherContent);
+        } catch (MessagingException e) {
+            e.printStackTrace();
+        }
+    }
+
 
 
 }

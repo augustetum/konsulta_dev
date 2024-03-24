@@ -84,7 +84,6 @@ public class TeacherAccountPage extends Div {
         add(new HorizontalLayout(name, surname));
         add(dayComboBox, startTimePicker, endTimePicker, addButton);
 
-        setUnavailabilityButton.addClickListener(event -> handleUnavailability());
         add(unavailabilityStart, unavailabilityEnd, setUnavailabilityButton);
 
         System.out.println(teacher.getTimeslots());
@@ -104,17 +103,7 @@ public class TeacherAccountPage extends Div {
         }
     }
 
-    private void handleUnavailability() {
-        LocalDate start = unavailabilityStart.getValue();
-        LocalDate end = unavailabilityEnd.getValue();
 
-        // Validate the dates
-        if (start != null && end != null && end.isAfter(start)) {
-            timeslotGenerator.handleUnavailability(teacher.getId(), start, end);
-        } else {
-            Notification.show("Please enter valid unavailability dates.");
-        }
-    }
 
 }
 

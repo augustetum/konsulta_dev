@@ -64,13 +64,6 @@ public class TimeslotGenerator {
         generateTimeslots(teacher, nextSelectedDay.plusWeeks(1), selectedDay, startTime, endTime, weekCounter + 1);
     }
 
-
-    @Transactional
-    public void handleUnavailability(Long teacherId, LocalDate startDate, LocalDate endDate) {
-        // Logic to handle unavailability:
-        // 1. Delete or mark as unavailable existing timeslots within the range
-        // 2. Adjust the timeslot generation logic to skip the unavailable period
-    }
 }
 
 

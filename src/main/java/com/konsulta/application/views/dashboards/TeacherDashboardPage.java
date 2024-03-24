@@ -3,6 +3,7 @@ package com.konsulta.application.views.dashboards;
 import com.konsulta.application.data.entity.Consultation;
 import com.konsulta.application.data.entity.Teacher;
 import com.konsulta.application.data.service.ConsultationService;
+import com.konsulta.application.data.service.ParentService;
 import com.konsulta.application.views.accounts.TeacherAccountPage;
 import com.konsulta.application.views.registration.LoginPage;
 import com.vaadin.flow.component.UI;
@@ -28,13 +29,15 @@ import java.util.List;
 public class TeacherDashboardPage extends Div implements BeforeEnterObserver {
     Teacher teacher = (Teacher) VaadinSession.getCurrent().getAttribute("teacher");
     private final ConsultationService consultationService;
+    private final ParentService parentService;
 
     H2 greeting = new H2("Hi:)" + teacher.getName());
     H3 header = new H3("Konsulta | dashboard");
     VerticalLayout upcomingColumn = new VerticalLayout();
 
-    public TeacherDashboardPage(ConsultationService consultationService) {
+    public TeacherDashboardPage(ConsultationService consultationService, ParentService parentService) {
         this.consultationService = consultationService;
+        this.parentService = parentService;
 
         MenuBar menuBar = new MenuBar();
 
@@ -79,30 +82,29 @@ public class TeacherDashboardPage extends Div implements BeforeEnterObserver {
     }
 
     private void populateConsultations() {
-        // Fetch the parent's consultations
-        List<Consultation> teacherConsultations = consultationService.getConsultationsByTeacher(teacher);
+        List<Consultation> teacherConsultations = consultationService.getConsultationsByTeacher(teacher); //fetches the parents' consultations
 
-        // Iterate through the consultations and create display components
         for (Consultation consultation : teacherConsultations) {
-            // Create a container for the consultation details
             Div consultationContainer = new Div();
-            consultationContainer.addClassName("consultation-container"); // You can define CSS styles for this class
+            consultationContainer.addClassName("consultation-container");
 
-            // Display teacher name
             H3 teacherLabel = new H3("Parent: " + consultation.getParent().getName() + consultation.getParent().getSurname());
 
-            // Display scheduled time
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
             String scheduledTime = consultation.getTimeslot().getStart().format(formatter) +
                     " - " +
                     consultation.getTimeslot().getEnd().format(formatter);
             H3 timeLabel = new H3("Scheduled Time: " + scheduledTime);
 
-            // Add "cancel" and "join" buttons (not functional yet)
-            Button cancelBtn = new Button("Cancel");
-            Button joinBtn = new Button("Join");
+            //cancellation is here
+            Button cancelButton = new Button("Cancel");
+            cancelButton.addClickListener(e -> {
+                consultationService.cancelConsultationByTeacher(consultation.getId());
+                parentService.sendCancellationEmailToParent(consultation.getParent(), consultation.getTeacher(), scheduledTime);
+                populateConsultations();
+            });
 
-            consultationContainer.add(teacherLabel, timeLabel, cancelBtn, joinBtn);
+            consultationContainer.add(teacherLabel, timeLabel, cancelButton);
             upcomingColumn.add(consultationContainer);
         }
     }

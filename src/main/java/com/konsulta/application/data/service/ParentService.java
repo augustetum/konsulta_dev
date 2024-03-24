@@ -57,7 +57,6 @@ public class ParentService {
         return parent;
     }
 
-    //generates a confirmation email for the parent
     public void sendConfirmationEmailToParent(Parent parent, Teacher selectedTeacher, String scheduledTime) {
         String parentEmail = parent.getEmail();
         String parentSubject = "Consultation Confirmation";
@@ -66,7 +65,20 @@ public class ParentService {
         try {
             EmailSender.sendEmail(parentEmail, parentSubject, parentContent);
         } catch (MessagingException e) {
-            e.printStackTrace(); // Handle email sending errors
+            e.printStackTrace();
+        }
+    }
+
+    public void sendCancellationEmailToParent(Parent parent, Teacher selectedTeacher, String scheduledTime) {
+        String parentEmail = parent.getEmail();
+        String parentSubject = "Consultation has been cancelled";
+        String parentContent = "Your consultation with " + selectedTeacher.getName() + " occuring at " + scheduledTime +
+                "has been cancelled by the teacher. Please book another consultation at the nearest available time.";
+
+        try {
+            EmailSender.sendEmail(parentEmail, parentSubject, parentContent);
+        } catch (MessagingException e) {
+            e.printStackTrace();
         }
     }
 

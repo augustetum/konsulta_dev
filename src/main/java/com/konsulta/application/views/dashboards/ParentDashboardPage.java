@@ -3,10 +3,8 @@ package com.konsulta.application.views.dashboards;
 import com.konsulta.application.data.entity.*;
 import com.konsulta.application.data.repository.ConsultationRepository;
 import com.konsulta.application.data.service.ConsultationService;
-import com.konsulta.application.data.service.EmailSender;
 import com.konsulta.application.data.service.ParentService;
 import com.konsulta.application.data.service.TeacherService;
-import com.konsulta.application.views.registration.LoginPage;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.contextmenu.MenuItem;
@@ -23,8 +21,6 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
-
-import javax.mail.MessagingException;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
@@ -141,7 +137,7 @@ public class ParentDashboardPage extends VerticalLayout implements BeforeEnterOb
         Timeslot selectedTimeslot = timeslotComboBox.getValue();
 
         if (selectedTeacher != null && selectedTimeslot != null) {
-            //implement the registration logic
+            // registration logic
             Consultation consultation = new Consultation();
             consultation.setParent(parent);
             consultation.setTeacher(selectedTeacher);
@@ -150,9 +146,6 @@ public class ParentDashboardPage extends VerticalLayout implements BeforeEnterOb
 
             // Save the Consultation to the database
             consultation = consultationRepository.save(consultation);
-
-            // Remove the selected timeslot from the teacher's available timeslots
-            teacherService.removeScheduledTimeslot(selectedTeacher, selectedTimeslot);
 
             Notification.show("Consultation registered!");
             teacherComboBox.setValue(null);
@@ -194,11 +187,20 @@ public class ParentDashboardPage extends VerticalLayout implements BeforeEnterOb
                     consultation.getTimeslot().getEnd().format(formatter);
             H3 timeLabel = new H3("Scheduled Time: " + scheduledTime);
 
-            // Add "cancel" and "join" buttons (not functional yet)
+            //cancellation is here
             Button cancelButton = new Button("Cancel");
-            Button joinButton = new Button("Join");
+            cancelButton.addClickListener(e -> {
+                consultationService.cancelConsultationByParent(consultation.getId());
+                populateConsultations();
+                teacherService.sendCancellationEmailToTeacher(consultation.getTeacher(), scheduledTime);
+            });
 
-            consultationContainer.add(teacherLabel, timeLabel, cancelButton, joinButton);
+            if (consultation.getStatus() == ConsultationStatus.CANCELLED_BY_PARENT) {
+                consultationContainer.getStyle().set("opacity", "0.5"); //visually indicates that the consultation is cancelled
+                cancelButton.setEnabled(false);
+            }
+
+            consultationContainer.add(teacherLabel, timeLabel, cancelButton);
             upcomingColumn.add(consultationContainer);
         }
     }

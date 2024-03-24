@@ -17,7 +17,7 @@ public class Consultation extends AbstractEntity {
     @Enumerated(EnumType.STRING) // Enum should be persisted as a string
     private ConsultationStatus status;
 
-    @OneToOne
+    @ManyToOne
     private Timeslot timeslot;
 
     public Teacher getTeacher() {return teacher;}
